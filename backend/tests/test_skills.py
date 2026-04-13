@@ -39,6 +39,8 @@ def test_adaptive_conversation_skill_exists_and_has_phase_guidance():
     assert "Grammar" in text
     assert "Sentence Construction" in text
     assert "phase_state.md" in text
+    assert "ask_user" in text
+    assert "Student-visible" in text or "CRITICAL" in text
 
 
 def test_image_analysis_skill_exists_and_has_content():
@@ -59,3 +61,7 @@ def test_evaluator_skill_contains_feedback_rubric():
     assert "Từ vựng" in text
     assert "Ngữ pháp" in text
     assert "Đặt câu" in text
+    assert "Vietnamese" in text
+    assert "⭐" in text
+    assert "out of 5 stars" in text.lower()
+    assert "mandatory" in text.lower() or "non-negotiable" in text.lower()

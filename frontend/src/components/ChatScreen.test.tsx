@@ -21,6 +21,7 @@ describe('ChatScreen', () => {
 
   it('renders turn-based label when total is null', () => {
     render(<ChatScreen {...defaultProps} total={null} />)
+    expect(screen.getByText('Adaptive lesson')).toBeInTheDocument()
     expect(screen.getByText('Turn 1')).toBeInTheDocument()
   })
 

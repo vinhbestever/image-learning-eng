@@ -78,6 +78,132 @@ def _messages_from_snapshot_values(values) -> list:
     return []
 
 
+# --- ask_user format recovery (model replied as plain text instead of calling ask_user) ---
+
+MAX_ASK_USER_FORMAT_RETRIES = 2
+
+ASK_USER_RETRY_PROMPT = """[Format fix — required now]
+The app did not receive your next student prompt because the `ask_user` tool was not invoked (or the turn finished without a valid interrupt).
+
+You are still in the middle of the lesson unless you had already fully decided to end and call the evaluator before this message.
+
+Immediately call the `ask_user` tool exactly once. Its `question` argument must be ONE string containing:
+(1) optional brief feedback (English + Vietnamese if you correct an error),
+(2) exactly ONE next English question for the student.
+
+Do not put the next question only in normal assistant text — the student will not see it and the session will break."""
+
+FIRST_QUESTION_RETRY_PROMPT = """[Format fix — required now]
+The app did not receive the first practice question because `ask_user` was not called.
+
+Call `ask_user` now with one string: a short warm welcome if you like, then exactly ONE English vocabulary question about the image."""
+
+
+def _looks_like_final_evaluation(text: str) -> bool:
+    """Heuristic: evaluator subagent output (Vietnamese rubric + stars)."""
+    if not text or not text.strip():
+        return False
+    head = text.strip()[:600]
+    if "⭐" in head:
+        return True
+    if "Từ vựng" in text and "Ngữ pháp" in text:
+        return True
+    if "Đặt câu" in text and ("sao" in text or "⭐" in text):
+        return True
+    return False
+
+
+def _looks_like_mid_session_leak(text: str) -> bool:
+    """Content that belongs in qa_log / tutor bubble, not final evaluation."""
+    if not text:
+        return False
+    if "**Turn" in text or "| Phase:" in text:
+        return True
+    low = text.lower()
+    if "phase: vocabulary" in low or "phase: grammar" in low or "phase: sentence" in low:
+        return True
+    return False
+
+
+_VI_MARKS = frozenset(
+    "ăâđêôơưỳýỷỹỵàáảãạấầẩẫậắằẳẵặèéẻẽẹếềểễệìíỉĩịòóỏõọốồổỗộớờởỡợùúủũụứửữự"
+)
+
+
+def _has_substantial_vietnamese(text: str) -> bool:
+    """Enough Vietnamese letters to treat blob as VN evaluation, not English tutor chat."""
+    return sum(1 for c in text.lower() if c in _VI_MARKS) >= 2
+
+
+def _looks_like_english_tutor_followup(text: str) -> bool:
+    """English mid-turn feedback (typo, corrected sentence, 'Would you like…?') without ask_user.
+
+    These are short and were previously misclassified as session end because they are <200 chars.
+    """
+    if not text or not text.strip():
+        return False
+    if _looks_like_final_evaluation(text) or _has_substantial_vietnamese(text):
+        return False
+    if "?" not in text:
+        return False
+    low = text.lower()
+    strong_cues = (
+        "would you like" in low,
+        "would you want" in low,
+        "do you want to try" in low,
+        "try another sentence" in low,
+        "try another question" in low,
+        "try a different sentence" in low,
+        "here's the corrected" in low,
+        "here is the corrected" in low,
+        "corrected sentence" in low,
+        "your corrected sentence" in low,
+    )
+    if any(strong_cues):
+        return True
+    # Typo / model answer + implicit invite (common pattern when model skips ask_user)
+    if ("typo" in low or "spelling" in low or "should be" in low) and (
+        "sentence" in low or "running" in low or "corrected" in low or '"' in text
+    ):
+        return True
+    return False
+
+
+def _should_retry_missing_ask_user(assistant_blob: str) -> bool:
+    """True if we likely need a corrective turn (missing ask_user)."""
+    if _looks_like_final_evaluation(assistant_blob):
+        return False
+    if not assistant_blob.strip():
+        return True
+    if _looks_like_mid_session_leak(assistant_blob):
+        return True
+    if _looks_like_english_tutor_followup(assistant_blob):
+        return True
+    if len(assistant_blob.strip()) > 200:
+        return True
+    return False
+
+
+async def _retry_until_ask_user_or_give_up(agent, config: dict, retry_prompt: str) -> tuple[str | None, str]:
+    """Run up to MAX_ASK_USER_FORMAT_RETRIES corrective invokes; return (question, final_blob)."""
+    last_blob = ""
+    for _ in range(MAX_ASK_USER_FORMAT_RETRIES):
+        await agent.ainvoke(
+            {"messages": [{"role": "user", "content": retry_prompt}]},
+            config=config,
+            version="v2",
+        )
+        snap = await agent.aget_state(config)
+        q = _question_from_interrupts(snap.interrupts)
+        if q:
+            return q, ""
+        msgs = _messages_from_snapshot_values(snap.values)
+        last_blob = _extract_final_message_from_messages(msgs)
+        if not _should_retry_missing_ask_user(last_blob):
+            break
+    return None, last_blob
+
+
 def _iter_text_deltas_from_chunk(chunk) -> list[str]:
     """Split an AIMessageChunk into streamable text pieces."""
     out: list[str] = []
@@ -247,7 +373,8 @@ async def create_session(image: UploadFile = File(...)):
 
     skill_files = load_all_skill_files()
 
-    result = await get_agent().ainvoke(
+    agent = get_agent()
+    result = await agent.ainvoke(
         {
             "messages": [
                 {"role": "user", "content": [
@@ -265,6 +392,8 @@ async def create_session(image: UploadFile = File(...)):
     )
 
     question = _extract_interrupt_question(result)
+    if not question:
+        question, _ = await _retry_until_ask_user_or_give_up(agent, config, FIRST_QUESTION_RETRY_PROMPT)
     if not question:
         raise HTTPException(status_code=500, detail="Agent did not generate a question.")
 
@@ -287,13 +416,17 @@ async def submit_answer(session_id: str, body: AnswerRequest):
         raise HTTPException(status_code=404, detail="Session not found.")
     config = {"configurable": {"thread_id": info.thread_id}, "recursion_limit": 1000}
 
-    result = await get_agent().ainvoke(
+    agent = get_agent()
+    result = await agent.ainvoke(
         Command(resume=body.answer),
         config=config,
         version="v2",
     )
 
     question = _extract_interrupt_question(result)
+    eval_blob = _extract_final_message(result)
+    if not question and _should_retry_missing_ask_user(eval_blob):
+        question, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
 
     if question:
         info.step += 1
@@ -306,13 +439,12 @@ async def submit_answer(session_id: str, body: AnswerRequest):
             done=False,
         )
     else:
-        evaluation = _extract_final_message(result)
         final_step = info.step
         session_store.delete_session(session_id)
         return SessionResponse(
             session_id=session_id,
             step=final_step,
-            evaluation=evaluation,
+            evaluation=eval_blob,
             done=True,
         )
 
@@ -355,6 +487,12 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
 
             snap = await agent.aget_state(config)
             q = _question_from_interrupts(snap.interrupts)
+            msgs = _messages_from_snapshot_values(snap.values)
+            eval_blob = _extract_final_message_from_messages(msgs)
+
+            if q is None and _should_retry_missing_ask_user(eval_blob):
+                q, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
+
             if q is not None:
                 info.step += 1
                 info.questions_asked.append(q)
@@ -368,8 +506,6 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
                     }
                 )
             else:
-                msgs = _messages_from_snapshot_values(snap.values)
-                evaluation = _extract_final_message_from_messages(msgs)
                 final_step = info.step
                 session_store.delete_session(session_id)
                 yield _sse_payload(
@@ -377,7 +513,7 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
                         "type": "done",
                         "step": final_step,
                         "total": None,
-                        "evaluation": evaluation,
+                        "evaluation": eval_blob,
                     }
                 )
         except Exception as e:

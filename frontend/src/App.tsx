@@ -27,7 +27,7 @@ function reducer(state: AppState, action: Action): AppState {
         screen: 'chat',
         sessionId: action.session.session_id,
         step: action.session.step,
-        total: action.session.total,
+        total: action.session.total ?? null,
         messages: [makeAgentMessage(action.session.question!, action.thinking, action.thinkingDuration)],
         currentQuestion: action.session.question!,
         imagePreview: action.imagePreview,
@@ -41,7 +41,7 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         step: action.step,
-        total: action.total,
+        total: action.total ?? null,
         messages: [...state.messages, makeAgentMessage(action.question, action.thinking, action.thinkingDuration)],
         currentQuestion: action.question,
       }

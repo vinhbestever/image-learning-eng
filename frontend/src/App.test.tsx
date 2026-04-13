@@ -39,7 +39,7 @@ describe('App', () => {
     render(<App />)
     const input = screen.getByTestId('file-input')
     await userEvent.upload(input, new File(['fake'], 'img.jpg', { type: 'image/jpeg' }))
-    await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Begin adaptive lesson/i }))
 
     expect(await screen.findByText('Turn 1')).toBeInTheDocument()
     expect(screen.getByText('What do you see?')).toBeInTheDocument()
@@ -60,13 +60,13 @@ describe('App', () => {
       screen.getByTestId('file-input'),
       new File(['fake'], 'img.jpg', { type: 'image/jpeg' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Begin adaptive lesson/i }))
 
     await screen.findByText('Turn 1')
     await userEvent.type(screen.getByRole('textbox'), 'My answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
 
-    expect(await screen.findByText('Session complete')).toBeInTheDocument()
+    expect(await screen.findByText('Tutor feedback')).toBeInTheDocument()
     expect(screen.getByText('Great effort!')).toBeInTheDocument()
   })
 
@@ -84,7 +84,7 @@ describe('App', () => {
       screen.getByTestId('file-input'),
       new File(['fake'], 'img.jpg', { type: 'image/jpeg' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Begin adaptive lesson/i }))
     await screen.findByText('Turn 1')
     await userEvent.type(screen.getByRole('textbox'), 'answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
@@ -107,11 +107,11 @@ describe('App', () => {
       screen.getByTestId('file-input'),
       new File(['fake'], 'img.jpg', { type: 'image/jpeg' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Begin adaptive lesson/i }))
     await screen.findByText('Turn 1')
     await userEvent.type(screen.getByRole('textbox'), 'answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
-    await screen.findByText('Session complete')
+    await screen.findByText('Tutor feedback')
 
     await userEvent.click(screen.getByRole('button', { name: /Try another image/i }))
     expect(screen.getByText(/Describe the world/i)).toBeInTheDocument()

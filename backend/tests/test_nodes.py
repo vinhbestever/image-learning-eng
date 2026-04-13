@@ -20,3 +20,4 @@ def test_session_info_tracks_progress():
 def test_ask_user_tool_is_registered():
     assert ask_user.name == "ask_user"
     assert "question" in ask_user.description.lower() or "question" in ask_user.args_schema.model_json_schema()["properties"]
+    assert "only channel" in ask_user.description.lower()

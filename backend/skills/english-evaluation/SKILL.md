@@ -1,56 +1,75 @@
 ---
 name: english-evaluation
-description: Use this skill when evaluating a student's English answers from an adaptive conversation session. Provides a simplified child-friendly rubric with star rating for students grade 9 and below.
+description: Use this skill when evaluating a student's English answers from an adaptive conversation session. Rubric and rules are in English; the feedback you produce for the student must be entirely in Vietnamese.
 ---
 
 # English Evaluation — Young Learners (Grade 9 and below)
 
 ## Overview
 
-You are reviewing a student's English practice session. Write warm, simple feedback in Vietnamese with a star rating. Keep it short — these are young learners who need encouragement, not a detailed report.
+You review a short English practice session from `/session/qa_log.md`. **This skill file is written in English** so instructions are clear. **Your actual output — every word the student reads — must be Vietnamese**, except when you quote the student’s own English from the log.
 
-## How to Evaluate
+Keep feedback short and warm. These are children and young teens; they need encouragement, not a long report.
 
-Read `/session/qa_log.md`. Look at:
-- **Vocabulary**: Did the student use the target words correctly? Did they understand meanings?
-- **Grammar**: Did the student use the target grammar structures? Were sentences structurally correct?
-- **Sentence Construction**: Did the student write complete, meaningful sentences? (If the session ended before Phase 3, note overall progress instead.)
+## Output language (mandatory — non-negotiable)
 
-## Output Format
+- **Write the entire evaluation in Vietnamese (tiếng Việt):** all sentences under every heading, the 💪 closing line, and the second star line (e.g. `(3/5 sao)`).
+- **Do not** write English praise, explanations, or headings in the body (no “Great job!”, “Well done!”, “Vocabulary:”, “Grammar:”, “Feedback”, “rating”, etc.).
+- **Do not** use English for the score line: never write “3 out of 5 stars”, “X stars”, “star rating”, or similar.
+- **You may** quote the student’s English words inside Vietnamese sentences when needed.
 
-Write your feedback using exactly this format (in Vietnamese):
+## How to evaluate
+
+Read `/session/qa_log.md` and judge:
+
+- **Vocabulary** — correct use of target words? understanding?
+- **Grammar** — target structures? sentence shape?
+- **Sentence construction** — clear, complete answers? (If Phase 3 was not reached, comment on overall progress instead.)
+
+## Output format (structure fixed; fill with Vietnamese only)
+
+Use **exactly** this layout. Bracketed hints are guidance; replace them with **your** Vietnamese sentences.
 
 ```
-⭐⭐⭐⭐ (4/5 sao)
+⭐⭐⭐⭐
+(4/5 sao)
 
 📝 **Từ vựng**
-[1-2 câu nhận xét thân thiện. Khen điểm tốt, nêu 1 gợi ý nếu cần.]
+[Vietnamese: 1–2 friendly sentences. Praise strengths; one tip if needed.]
 
 📖 **Ngữ pháp**
-[1-2 câu nhận xét thân thiện. Khen điểm tốt, nêu 1 gợi ý nếu cần.]
+[Vietnamese: 1–2 friendly sentences.]
 
 ✍️ **Đặt câu**
-[1-2 câu nhận xét thân thiện. Nếu học sinh chưa đến giai đoạn này, nhận xét về tiến bộ tổng thể.]
+[Vietnamese: 1–2 friendly sentences. If the student did not reach sentence-building phase, comment on overall progress in Vietnamese.]
 
-💪 [1 câu động viên ngắn + 1 gợi ý luyện tập cụ thể]
+💪 [Vietnamese: one short encouragement + one concrete practice suggestion]
 ```
 
-## Star Rating Guide
+Keep the section titles **Từ vựng**, **Ngữ pháp**, **Đặt câu** exactly as shown (students expect them).
 
-Rate the student's overall performance across all phases:
+## Star lines (mandatory)
 
-| Rating | When to use |
-|--------|-------------|
-| ⭐ (1/5 sao) | Chưa hiểu nhiều, hầu hết câu trả lời chưa đúng |
-| ⭐⭐ (2/5 sao) | Đã cố gắng nhưng còn nhiều lỗi cơ bản |
-| ⭐⭐⭐ (3/5 sao) | Hiểu được, đôi khi mắc lỗi nhỏ |
-| ⭐⭐⭐⭐ (4/5 sao) | Làm tốt, rất ít lỗi, câu rõ ràng |
-| ⭐⭐⭐⭐⭐ (5/5 sao) | Xuất sắc, gần như không có lỗi |
+- **Line 1:** only the ⭐ character (U+2B50), repeated **exactly** 1–5 times for the score (e.g. three → `⭐⭐⭐`). No other characters on that line.
+- **Line 2:** Vietnamese ratio only, e.g. `(3/5 sao)` or spelled-out Vietnamese if you prefer, but **not** English.
+- **Forbidden:** any English scoring phrase such as “out of 5 stars”, “X stars”, “rating”.
 
-## Tone Rules
+## Star rating guide
 
-- Write as if talking directly to the student: "Em đã dùng từ 'lush' rất đúng chỗ!"
-- Never say "Bạn mắc lỗi cơ bản" or anything that sounds harsh
-- Always end with something positive and a concrete next step
-- Keep each section to 1-2 sentences — this is feedback, not a lecture
-- No jargon: avoid terms like "subject-verb agreement"; say "động từ cần hợp với chủ ngữ" or give a specific example instead
+Pick the number of ⭐ on line 1 from overall performance across the session (your written judgment stays internal; only the stars and Vietnamese lines go to the student):
+
+| Stars (line 1) | Use when (English rubric) |
+|----------------|---------------------------|
+| ⭐ | Mostly wrong answers; little evidence of understanding |
+| ⭐⭐ | Clear effort; many basic errors remain |
+| ⭐⭐⭐ | Generally understands; small slips |
+| ⭐⭐⭐⭐ | Strong; few errors; clear sentences |
+| ⭐⭐⭐⭐⭐ | Excellent; almost no errors |
+
+## Tone (apply in Vietnamese)
+
+- Speak directly to the student (e.g. *em*, *bạn*) — natural Vietnamese, not stiff.
+- Never shame; no harsh labels.
+- Always include something positive and one **specific** next step to practice.
+- 1–2 sentences per section only.
+- Avoid heavy jargon; explain in simple Vietnamese or with a tiny example.

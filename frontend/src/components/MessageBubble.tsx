@@ -21,7 +21,7 @@ export default function MessageBubble({ message }: Props) {
           />
         )}
         <span className="label-tag" style={{ display: 'block', marginBottom: 8, color: 'var(--accent)' }}>
-          Session complete
+          Tutor feedback
         </span>
         <div
           style={{

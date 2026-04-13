@@ -4,6 +4,7 @@ interface Props {
   done?: boolean
 }
 
+/** Open-ended adaptive sessions omit `total`; fixed-length drills send a positive cap. */
 export default function ProgressIndicator({ step, total, done }: Props) {
   const hasCap = total != null && total > 0
   const pct = done
@@ -20,10 +21,12 @@ export default function ProgressIndicator({ step, total, done }: Props) {
       ? `Question ${step} / ${total}`
       : `Turn ${step}`
 
+  const sessionKindLabel = done ? 'Completed' : hasCap ? 'Session' : 'Adaptive lesson'
+
   return (
     <div style={{ flex: 1 }}>
       <p className="label-tag" style={{ margin: '0 0 4px' }}>
-        {done ? 'Completed' : 'Session'}
+        {sessionKindLabel}
       </p>
       <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem' }}>
         {mainLabel}

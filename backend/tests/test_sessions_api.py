@@ -152,10 +152,13 @@ def test_create_session_rejects_oversized_image(client):
 
 def test_create_session_fails_when_agent_returns_no_interrupt(client):
     with patch("api.sessions.get_agent") as mock_get_agent:
+        agent = mock_get_agent.return_value
         _patch_ainvoke(
-            mock_get_agent.return_value,
+            agent,
             return_value=SimpleNamespace(interrupts=[], value={"messages": []}),
         )
+        empty_snap = SimpleNamespace(interrupts=[], values={"messages": []})
+        agent.aget_state = AsyncMock(return_value=empty_snap)
         response = client.post(
             "/sessions",
             files={

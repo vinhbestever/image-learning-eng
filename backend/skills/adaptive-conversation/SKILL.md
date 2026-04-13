@@ -81,6 +81,19 @@ Feedback: [1-sentence summary of your feedback]
 [anything to remember for next question]
 ```
 
+## Student-visible turns (CRITICAL)
+
+The app **only** shows the student text from the **`ask_user` tool**. If you continue the lesson but forget `ask_user`, the session **ends incorrectly**.
+
+When you are **not** wrapping up:
+
+1. Update `/session/qa_log.md` and `/session/phase_state.md` via tools.
+2. Call **`ask_user` once** with a **single string** that contains:
+   - Optional short feedback (English + Vietnamese for errors),
+   - **Exactly one** next question in English.
+
+Do **not** put the `**Turn N** | Phase:...` log lines in `ask_user` — those belong only in `qa_log.md`.
+
 ## Deciding Whether to Continue or End
 
 After updating session files, read both files and reason:

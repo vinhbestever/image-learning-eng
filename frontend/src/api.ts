@@ -1,4 +1,5 @@
 import type { SessionResponse } from './types'
+import { normalizeSessionResponse } from './sessionResponse'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -31,7 +32,7 @@ export async function createSession(image: File): Promise<SessionResponse> {
   const res = await fetch(`${API_BASE}/sessions`, { method: 'POST', body: formData })
   const data = await res.json()
   if (!res.ok) throw new Error(formatErrorDetail(data))
-  return data as SessionResponse
+  return normalizeSessionResponse(data as Record<string, unknown>)
 }
 
 export type StreamHandlers = {

@@ -9,6 +9,8 @@ def test_system_prompt_three_phases_and_subagents():
     assert "image_analyzer" in SYSTEM_PROMPT
     assert "qa_log.md" in SYSTEM_PROMPT
     assert "phase_state.md" in SYSTEM_PROMPT
+    assert "ask_user" in s
+    assert "mandatory" in s or "critical" in s
 
 
 def test_system_prompt_no_fixed_five_questions():
@@ -19,6 +21,10 @@ def test_system_prompt_no_fixed_five_questions():
 def test_evaluator_prompt_star_and_log():
     assert "sao" in EVALUATOR_PROMPT
     assert "qa_log.md" in EVALUATOR_PROMPT
+    assert "⭐" in EVALUATOR_PROMPT
+    assert "Vietnamese" in EVALUATOR_PROMPT and "tiếng Việt" in EVALUATOR_PROMPT
+    assert "out of 5 stars" in EVALUATOR_PROMPT.lower()
+    assert "English" in EVALUATOR_PROMPT
 
 
 def test_image_analyzer_prompt_writes_context_file():

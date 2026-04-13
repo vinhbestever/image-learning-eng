@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import ImageDropzone from './ImageDropzone'
 import { streamCreateSession } from '../api'
+import { normalizeSessionResponse } from '../sessionResponse'
 import type { SessionResponse } from '../types'
 
 interface Props {
@@ -49,13 +50,14 @@ export default function UploadScreen({ onSessionCreated }: Props) {
           const elapsed = Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000))
           const captured = thinkingAccRef.current
           thinkingAccRef.current = ''
-          const session: SessionResponse = {
+          setLoading(false)
+          const session: SessionResponse = normalizeSessionResponse({
             session_id: sessionId,
             step,
             total,
             question: text,
             done: false,
-          }
+          })
           onSessionCreated(session, preview, captured, elapsed)
         },
         onError: (msg) => {
@@ -82,8 +84,22 @@ export default function UploadScreen({ onSessionCreated }: Props) {
             <span style={{ color: 'var(--accent)' }}>in English</span>
           </h1>
           <p style={{ margin: 0, color: 'var(--ink-soft)', maxWidth: 420, lineHeight: 1.65 }}>
-            Upload a photograph. A patient tutor will guide you through vocabulary, grammar, and sentences — then
-            give you warm, specific feedback on your English.
+            Upload a photograph. The tutor adapts each session: vocabulary, then grammar, then building sentences
+            from your picture. There is no fixed number of questions — the tutor decides when you are ready for
+            feedback.
+          </p>
+          <p
+            style={{
+              margin: '12px 0 0',
+              color: 'var(--ink-soft)',
+              maxWidth: 420,
+              lineHeight: 1.65,
+              fontSize: '0.92rem',
+              opacity: 0.92,
+            }}
+          >
+            Buổi học linh hoạt: từ vựng → ngữ pháp → đặt câu. Bạn có thể hỏi giáo viên bằng tiếng Việt hoặc tiếng
+            Anh khi cần; giáo viên sẽ trả lời rồi tiếp tục bài.
           </p>
         </header>
 
@@ -113,7 +129,7 @@ export default function UploadScreen({ onSessionCreated }: Props) {
                 className="label-tag"
                 style={{ color: 'var(--sage)' }}
               >
-                Analysing your photo…
+                Preparing your lesson…
               </span>
             </div>
             {analysisText && (
@@ -144,7 +160,7 @@ export default function UploadScreen({ onSessionCreated }: Props) {
             disabled={!file || loading}
             style={{ minWidth: 220 }}
           >
-            {loading ? 'Opening your session…' : 'Begin practice'}
+            {loading ? 'Starting adaptive lesson…' : 'Begin adaptive lesson'}
           </button>
         </div>
       </div>

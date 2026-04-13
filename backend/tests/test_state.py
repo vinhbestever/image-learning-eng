@@ -1,3 +1,5 @@
+import sqlite3
+
 import pytest
 
 from agent.state import SessionInfo
@@ -46,3 +48,41 @@ def test_session_store_round_trip_without_total(fresh_session_store):
     assert loaded.phase == "grammar"
     assert loaded.questions_asked == ["Q1"]
     assert not hasattr(loaded, "total")
+
+
+def test_session_store_migrates_legacy_table_with_total_column(tmp_path, monkeypatch):
+    """Existing DBs from the 5-question flow used total instead of phase."""
+    db_path = tmp_path / "legacy.sqlite"
+    raw = sqlite3.connect(str(db_path))
+    raw.execute(
+        """
+        CREATE TABLE api_sessions (
+            session_id TEXT PRIMARY KEY,
+            thread_id TEXT NOT NULL,
+            step INTEGER NOT NULL,
+            total INTEGER NOT NULL,
+            questions_json TEXT NOT NULL
+        )
+        """
+    )
+    raw.execute(
+        "INSERT INTO api_sessions VALUES (?,?,?,?,?)",
+        ("s1", "tid", 2, 5, '["Q?"]'),
+    )
+    raw.commit()
+    raw.close()
+
+    monkeypatch.setenv("APP_SQLITE_PATH", str(db_path))
+    from api import session_store
+
+    session_store.reset_connection()
+    loaded = session_store.load_session("s1")
+    assert loaded is not None
+    assert loaded.thread_id == "tid"
+    assert loaded.step == 2
+    assert loaded.phase == "vocabulary"
+    assert loaded.questions_asked == ["Q?"]
+
+    session_store.save_session("s2", SessionInfo(thread_id="t2", step=1))
+    assert session_store.load_session("s2") is not None
+    session_store.reset_connection()

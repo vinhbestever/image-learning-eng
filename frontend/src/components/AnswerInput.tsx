@@ -36,8 +36,8 @@ export default function AnswerInput({ onSubmit, disabled }: Props) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder="Your answer in English…"
-        aria-label="Your answer"
+        placeholder="Answer in English — or ask the tutor a question…"
+        aria-label="Your answer or question for the tutor"
         style={{
           flex: 1,
           padding: '14px 16px',

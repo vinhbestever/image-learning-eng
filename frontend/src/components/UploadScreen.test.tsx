@@ -21,17 +21,17 @@ describe('UploadScreen', () => {
   it('renders upload prompt and disabled button', () => {
     render(<UploadScreen onSessionCreated={vi.fn()} />)
     expect(screen.getByText(/Describe the world/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Begin practice/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Begin adaptive lesson/i })).toBeDisabled()
   })
 
-  it('enables Begin practice button after file is selected', async () => {
+  it('enables Begin adaptive lesson button after file is selected', async () => {
     render(<UploadScreen onSessionCreated={vi.fn()} />)
     const input = screen.getByTestId('file-input')
     const file = new File(['fake'], 'photo.jpg', { type: 'image/jpeg' })
 
     await userEvent.upload(input, file)
 
-    expect(screen.getByRole('button', { name: /Begin practice/i })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /Begin adaptive lesson/i })).toBeEnabled()
   })
 
   it('calls onSessionCreated with session data on submit', async () => {
@@ -48,7 +48,7 @@ describe('UploadScreen', () => {
     const input = screen.getByTestId('file-input')
     const file = new File(['fake'], 'photo.jpg', { type: 'image/jpeg' })
     await userEvent.upload(input, file)
-    await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Begin adaptive lesson/i }))
 
     expect(onSessionCreated).toHaveBeenCalledWith(
       expect.objectContaining({ session_id: 'abc', question: 'What do you see?' }),
