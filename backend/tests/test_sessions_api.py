@@ -32,7 +32,8 @@ def _mock_invoke_done(evaluation):
 
 
 def test_create_session(client):
-    with patch("api.sessions.agent") as mock_agent:
+    with patch("api.sessions.get_agent") as mock_get_agent:
+        mock_agent = mock_get_agent.return_value
         mock_agent.invoke.return_value = _mock_invoke_interrupt("What do you see?")
 
         image_bytes = make_fake_image()
@@ -51,7 +52,8 @@ def test_create_session(client):
 
 
 def test_submit_answer_mid_session(client):
-    with patch("api.sessions.agent") as mock_agent:
+    with patch("api.sessions.get_agent") as mock_get_agent:
+        mock_agent = mock_get_agent.return_value
         mock_agent.invoke.side_effect = [
             _mock_invoke_interrupt("What do you see?"),
             _mock_invoke_interrupt("Describe the colors."),
@@ -77,7 +79,8 @@ def test_submit_answer_mid_session(client):
 
 
 def test_submit_all_answers_returns_evaluation(client):
-    with patch("api.sessions.agent") as mock_agent:
+    with patch("api.sessions.get_agent") as mock_get_agent:
+        mock_agent = mock_get_agent.return_value
         mock_agent.invoke.side_effect = [
             _mock_invoke_interrupt("Q1?"),
             _mock_invoke_interrupt("Q2?"),

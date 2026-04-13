@@ -3,7 +3,7 @@ from uuid import uuid4
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from langgraph.types import Command
 from .models import AnswerRequest, SessionResponse
-from agent.graph import agent
+from agent.graph import get_agent
 from agent.state import SessionInfo
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -45,7 +45,7 @@ async def create_session(image: UploadFile = File(...)):
 
     image_b64 = base64.b64encode(image_bytes).decode()
 
-    result = agent.invoke(
+    result = get_agent().invoke(
         {"messages": [
             {"role": "user", "content": [
                 {
@@ -84,7 +84,7 @@ async def submit_answer(session_id: str, body: AnswerRequest):
     info = _sessions[session_id]
     config = {"configurable": {"thread_id": info.thread_id}}
 
-    result = agent.invoke(
+    result = get_agent().invoke(
         Command(resume=body.answer),
         config=config,
         version="v2",
