@@ -5,6 +5,7 @@ from langgraph.types import Command
 from .models import AnswerRequest, SessionResponse
 from agent.graph import get_agent
 from agent.state import SessionInfo
+from agent.skills import load_all_skill_files
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -45,16 +46,21 @@ async def create_session(image: UploadFile = File(...)):
 
     image_b64 = base64.b64encode(image_bytes).decode()
 
+    skill_files = load_all_skill_files()
+
     result = get_agent().invoke(
-        {"messages": [
-            {"role": "user", "content": [
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/{image.content_type.split('/')[-1]};base64,{image_b64}"},
-                },
-                {"type": "text", "text": "Please look at this image and start asking me English practice questions about it."},
-            ]},
-        ]},
+        {
+            "messages": [
+                {"role": "user", "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/{image.content_type.split('/')[-1]};base64,{image_b64}"},
+                    },
+                    {"type": "text", "text": "Please look at this image and start asking me English practice questions about it."},
+                ]},
+            ],
+            "files": skill_files,
+        },
         config=config,
         version="v2",
     )

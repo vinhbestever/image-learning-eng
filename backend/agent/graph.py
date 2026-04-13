@@ -2,6 +2,7 @@ from deepagents import create_deep_agent
 from langgraph.checkpoint.memory import MemorySaver
 from .prompts import SYSTEM_PROMPT, EVALUATOR_PROMPT
 from .tools import ask_user
+from .skills import MAIN_SKILLS_PATH, EVALUATOR_SKILLS_PATH
 
 evaluator_subagent = {
     "name": "evaluator",
@@ -9,6 +10,7 @@ evaluator_subagent = {
     "Reads Q&A logs from the virtual filesystem and generates warm, constructive feedback "
     "covering grammar, vocabulary, fluency, and content accuracy.",
     "system_prompt": EVALUATOR_PROMPT,
+    "skills": [EVALUATOR_SKILLS_PATH],
 }
 
 _agent = None
@@ -21,6 +23,7 @@ def build_agent():
     - Planning: write_todos for tracking Q&A progress
     - Virtual filesystem: write_file/read_file for questions and Q&A log
     - Subagent: evaluator for context-isolated feedback generation
+    - Skills: image-question-generation (main), english-evaluation (evaluator)
     - Summarization: automatic context compression for long sessions
     - Human-in-the-loop: ask_user tool with interrupt() for Q&A
     """
@@ -30,6 +33,7 @@ def build_agent():
         tools=[ask_user],
         system_prompt=SYSTEM_PROMPT,
         subagents=[evaluator_subagent],
+        skills=[MAIN_SKILLS_PATH],
         checkpointer=checkpointer,
     )
     return agent
