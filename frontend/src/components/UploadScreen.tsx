@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import ImageDropzone from './ImageDropzone'
 import { streamCreateSession } from '../api'
 import type { SessionResponse } from '../types'

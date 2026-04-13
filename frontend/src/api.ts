@@ -62,12 +62,12 @@ export async function streamSubmitAnswer(
   }
 
   await consumeSse(res, (ev) => {
-    if (ev.type === 'delta' && ev.text) handlers.onDelta(ev.text)
+    if (ev.type === 'delta' && ev.text) handlers.onDelta(ev.text as string)
     else if (ev.type === 'question' && ev.text != null && ev.step != null && ev.total != null) {
-      handlers.onQuestion({ step: ev.step, total: ev.total, text: ev.text })
+      handlers.onQuestion({ step: ev.step as number, total: ev.total as number, text: ev.text as string })
     } else if (ev.type === 'done' && ev.evaluation != null && ev.step != null && ev.total != null) {
-      handlers.onDone({ step: ev.step, total: ev.total, evaluation: ev.evaluation })
-    } else if (ev.type === 'error' && ev.message) handlers.onError(ev.message)
+      handlers.onDone({ step: ev.step as number, total: ev.total as number, evaluation: ev.evaluation as string })
+    } else if (ev.type === 'error' && ev.message) handlers.onError(ev.message as string)
   })
 }
 
@@ -93,10 +93,10 @@ export async function streamCreateSession(
   }
 
   await consumeSse(res, (ev) => {
-    if (ev.type === 'delta' && ev.text) handlers.onDelta(ev.text)
+    if (ev.type === 'delta' && ev.text) handlers.onDelta(ev.text as string)
     else if (ev.type === 'question' && ev.session_id && ev.text != null && ev.step != null && ev.total != null) {
-      handlers.onQuestion({ sessionId: ev.session_id, step: ev.step, total: ev.total, text: ev.text })
-    } else if (ev.type === 'error' && ev.message) handlers.onError(ev.message)
+      handlers.onQuestion({ sessionId: ev.session_id as string, step: ev.step as number, total: ev.total as number, text: ev.text as string })
+    } else if (ev.type === 'error' && ev.message) handlers.onError(ev.message as string)
     // 'started' event is informational only; session_id comes with 'question'
   })
 }
