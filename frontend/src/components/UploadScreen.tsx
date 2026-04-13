@@ -1,10 +1,15 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import ImageDropzone from './ImageDropzone'
-import { createSession } from '../api'
+import { streamCreateSession } from '../api'
 import type { SessionResponse } from '../types'
 
 interface Props {
-  onSessionCreated: (session: SessionResponse, image: File) => void
+  onSessionCreated: (
+    session: SessionResponse,
+    imagePreviewUrl: string,
+    thinking: string,
+    thinkingDuration: number,
+  ) => void
 }
 
 export default function UploadScreen({ onSessionCreated }: Props) {
@@ -12,45 +17,137 @@ export default function UploadScreen({ onSessionCreated }: Props) {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [analysisText, setAnalysisText] = useState('')
+
+  const thinkingAccRef = useRef('')
+  const thinkingStartRef = useRef(0)
 
   const handleFileSelected = (selected: File) => {
     setFile(selected)
-    setPreview(URL.createObjectURL(selected))
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(selected)
+    })
     setError(null)
   }
 
   const handleSubmit = async () => {
-    if (!file) return
+    if (!file || !preview) return
     setLoading(true)
     setError(null)
+    setAnalysisText('')
+    thinkingAccRef.current = ''
+    thinkingStartRef.current = Date.now()
+
     try {
-      const session = await createSession(file)
-      onSessionCreated(session, file)
+      await streamCreateSession(file, {
+        onDelta: (t) => {
+          thinkingAccRef.current += t
+          setAnalysisText(thinkingAccRef.current)
+        },
+        onQuestion: ({ sessionId, step, total, text }) => {
+          const elapsed = Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000))
+          const captured = thinkingAccRef.current
+          thinkingAccRef.current = ''
+          const session: SessionResponse = {
+            session_id: sessionId,
+            step,
+            total,
+            question: text,
+            done: false,
+          }
+          onSessionCreated(session, preview, captured, elapsed)
+        },
+        onError: (msg) => {
+          setError(msg)
+          setLoading(false)
+        },
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
-    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '80px auto', padding: 24 }}>
-      <h1 style={{ textAlign: 'center', marginBottom: 24 }}>Learn English with Images</h1>
-      <ImageDropzone onFileSelected={handleFileSelected} preview={preview} />
-      {error && <p style={{ color: 'red', marginTop: 8 }}>{error}</p>}
-      <button
-        onClick={handleSubmit}
-        disabled={!file || loading}
-        style={{
-          marginTop: 16,
-          width: '100%',
-          padding: '12px 0',
-          fontSize: 16,
-          cursor: file && !loading ? 'pointer' : 'not-allowed',
-        }}
-      >
-        {loading ? 'Analyzing image...' : 'Start Session'}
-      </button>
+    <div className="app-shell" style={{ minHeight: '100vh', padding: 'clamp(24px, 6vw, 64px)' }}>
+      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+        <header style={{ marginBottom: '2.5rem', textAlign: 'left' }}>
+          <p className="label-tag" style={{ marginBottom: 8 }}>
+            English studio
+          </p>
+          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.75rem)', margin: '0 0 12px' }}>
+            Describe the world
+            <br />
+            <span style={{ color: 'var(--accent)' }}>in English</span>
+          </h1>
+          <p style={{ margin: 0, color: 'var(--ink-soft)', maxWidth: 420, lineHeight: 1.65 }}>
+            Upload a photograph. A patient tutor will ask five questions about it — then give you warm,
+            specific feedback on your English.
+          </p>
+        </header>
+
+        <ImageDropzone onFileSelected={handleFileSelected} preview={preview} />
+
+        {error ? (
+          <p role="alert" style={{ color: 'var(--accent-dim)', marginTop: 16, textAlign: 'center' }}>
+            {error}
+          </p>
+        ) : null}
+
+        {loading && (
+          <div
+            style={{
+              marginTop: 20,
+              padding: '14px 18px',
+              borderRadius: 12,
+              background: 'rgba(92, 107, 86, 0.06)',
+              border: '1px solid rgba(92, 107, 86, 0.18)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: analysisText ? 8 : 0 }}>
+              <span className="thinking-dots" aria-hidden>
+                <span /><span /><span />
+              </span>
+              <span
+                className="label-tag"
+                style={{ color: 'var(--sage)' }}
+              >
+                Analysing your photo…
+              </span>
+            </div>
+            {analysisText && (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '0.85rem',
+                  color: 'var(--ink-soft)',
+                  fontFamily: 'var(--font-body)',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.6,
+                  maxHeight: 140,
+                  overflowY: 'auto',
+                }}
+              >
+                {analysisText}
+                <span className="stream-cursor" aria-hidden />
+              </p>
+            )}
+          </div>
+        )}
+
+        <div style={{ marginTop: 28, textAlign: 'center' }}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleSubmit}
+            disabled={!file || loading}
+            style={{ minWidth: 220 }}
+          >
+            {loading ? 'Opening your session…' : 'Begin practice'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

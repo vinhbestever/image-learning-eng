@@ -7,6 +7,7 @@ import type { Message } from '../types'
 const defaultProps = {
   sessionId: 'abc-123',
   step: 1,
+  total: 5,
   imagePreview: 'data:image/jpeg;base64,fake',
   messages: [{ role: 'agent' as const, text: 'What do you see?' }],
   onAnswerSubmitted: vi.fn(),
@@ -44,5 +45,16 @@ describe('ChatScreen', () => {
     await userEvent.type(input, 'Some answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
     expect(input).toHaveValue('')
+  })
+
+  it('disables input while submitting', () => {
+    render(<ChatScreen {...defaultProps} submitting />)
+    expect(screen.getByRole('textbox')).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Send/i })).toBeDisabled()
+  })
+
+  it('shows submit error', () => {
+    render(<ChatScreen {...defaultProps} submitError="Network failed" />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Network failed')
   })
 })

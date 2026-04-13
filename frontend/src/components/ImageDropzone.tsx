@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 
 interface Props {
   onFileSelected: (file: File) => void
@@ -8,47 +8,71 @@ interface Props {
 export default function ImageDropzone({ onFileSelected, preview }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file && file.type.startsWith('image/')) onFileSelected(file)
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) onFileSelected(file)
+  const pick = (f: File | undefined) => {
+    if (f && f.type.startsWith('image/')) onFileSelected(f)
   }
 
   return (
     <div
-      onDrop={handleDrop}
-      onDragOver={(e) => e.preventDefault()}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click()
+      }}
       onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
+      onDrop={(e) => {
+        e.preventDefault()
+        pick(e.dataTransfer.files[0])
+      }}
+      className="card"
       style={{
-        border: '2px dashed #aaa',
-        borderRadius: 8,
-        padding: 32,
-        textAlign: 'center',
         cursor: 'pointer',
-        minHeight: 160,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        padding: '2rem 1.5rem',
+        textAlign: 'center',
+        border: '2px dashed rgba(196, 85, 42, 0.45)',
+        background: 'linear-gradient(135deg, rgba(246, 240, 232, 0.95) 0%, rgba(232, 223, 210, 0.85) 100%)',
+        transform: 'rotate(-0.5deg)',
+        maxWidth: 400,
+        margin: '0 auto',
       }}
     >
-      {preview ? (
-        <img src={preview} alt="Preview" style={{ maxHeight: 140, maxWidth: '100%', borderRadius: 4 }} />
-      ) : (
-        <p style={{ color: '#666' }}>Drag & drop an image here, or click to browse</p>
-      )}
       <input
-        data-testid="file-input"
         ref={inputRef}
+        data-testid="file-input"
         type="file"
         accept="image/jpeg,image/png,image/webp"
         style={{ display: 'none' }}
-        onChange={handleChange}
+        onChange={(e) => pick(e.target.files?.[0])}
       />
+      {preview ? (
+        <img
+          src={preview}
+          alt="Selected"
+          style={{
+            maxWidth: '100%',
+            maxHeight: 220,
+            borderRadius: 12,
+            objectFit: 'contain',
+            boxShadow: '0 12px 40px rgba(20, 18, 16, 0.15)',
+          }}
+        />
+      ) : (
+        <>
+          <p className="label-tag" style={{ marginBottom: 12 }}>
+            Your visual prompt
+          </p>
+          <p style={{ margin: 0, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+            Drop an image here, or click to browse
+          </p>
+          <p style={{ margin: '12px 0 0', fontSize: '0.85rem', color: 'var(--sage)' }}>
+            JPEG, PNG, or WebP · up to 5MB
+          </p>
+        </>
+      )}
     </div>
   )
 }

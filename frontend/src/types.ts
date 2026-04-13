@@ -8,8 +8,10 @@ export interface SessionResponse {
 }
 
 export interface Message {
-  role: 'agent' | 'user'
+  role: 'agent' | 'user' | 'evaluation'
   text: string
+  thinking?: string
+  thinkingDuration?: number
 }
 
 export type AppState =
@@ -18,8 +20,9 @@ export type AppState =
       screen: 'chat'
       sessionId: string
       step: number
+      total: number
       messages: Message[]
       currentQuestion: string
       imagePreview: string
+      done?: boolean
     }
-  | { screen: 'evaluation'; evaluation: string }

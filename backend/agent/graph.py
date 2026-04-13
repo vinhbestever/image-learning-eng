@@ -1,8 +1,14 @@
+import os
+
+import aiosqlite
 from deepagents import create_deep_agent
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
 from .prompts import SYSTEM_PROMPT, EVALUATOR_PROMPT
-from .tools import ask_user
 from .skills import MAIN_SKILLS_PATH, EVALUATOR_SKILLS_PATH
+from .storage import get_app_sqlite_path
+from .tools import ask_user
 
 evaluator_subagent = {
     "name": "evaluator",
@@ -14,6 +20,46 @@ evaluator_subagent = {
 }
 
 _agent = None
+_async_conn: aiosqlite.Connection | None = None
+_async_checkpointer: AsyncSqliteSaver | None = None
+
+
+def reset_agent() -> None:
+    """Clear compiled agent singleton (tests / reload)."""
+    global _agent
+    _agent = None
+
+
+async def init_checkpointer() -> None:
+    """Open async SQLite + checkpointer. Call from FastAPI lifespan (or tests skip via USE_MEMORY_CHECKPOINTER)."""
+    global _async_conn, _async_checkpointer, _agent
+    await shutdown_checkpointer()
+    path = get_app_sqlite_path()
+    _async_conn = await aiosqlite.connect(path)
+    _async_checkpointer = AsyncSqliteSaver(_async_conn)
+    _agent = None
+
+
+async def shutdown_checkpointer() -> None:
+    """Close async DB handle."""
+    global _async_conn, _async_checkpointer, _agent
+    _agent = None
+    _async_checkpointer = None
+    if _async_conn is not None:
+        await _async_conn.close()
+        _async_conn = None
+
+
+def _select_checkpointer():
+    """Tests use in-memory graph; production uses AsyncSqliteSaver (async-safe with ainvoke / astream_events)."""
+    if os.environ.get("USE_MEMORY_CHECKPOINTER") == "1":
+        return MemorySaver()
+    if _async_checkpointer is None:
+        raise RuntimeError(
+            "Async SQLite checkpointer not initialized. "
+            "Run the app with FastAPI lifespan (see main.py), or set USE_MEMORY_CHECKPOINTER=1 for tests."
+        )
+    return _async_checkpointer
 
 
 def build_agent():
@@ -27,7 +73,7 @@ def build_agent():
     - Summarization: automatic context compression for long sessions
     - Human-in-the-loop: ask_user tool with interrupt() for Q&A
     """
-    checkpointer = MemorySaver()
+    checkpointer = _select_checkpointer()
     agent = create_deep_agent(
         model="openai:gpt-4o",
         tools=[ask_user],

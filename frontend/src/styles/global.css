@@ -1,0 +1,299 @@
+/* Editorial studio — warm paper on ink, terracotta accent, literacy-forward */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --ink: #141210;
+  --ink-soft: #3d3834;
+  --paper: #f6f0e8;
+  --paper-deep: #e8dfd2;
+  --accent: #c4552a;
+  --accent-dim: #9a4220;
+  --sage: #5c6b56;
+  --mist: rgba(20, 18, 16, 0.06);
+  --shadow: 0 24px 64px rgba(20, 18, 16, 0.12);
+  --radius-lg: 20px;
+  --radius-sm: 10px;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'IBM Plex Serif', Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 10% -20%, rgba(196, 85, 42, 0.09), transparent 50%),
+    radial-gradient(ellipse 80% 60% at 100% 30%, rgba(92, 107, 86, 0.08), transparent 45%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* ─── Animations ─────────────────────────────────── */
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes thinking-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* ─── Base components ────────────────────────────── */
+
+.app-shell {
+  animation: fade-rise 0.55s ease-out both;
+}
+
+.stream-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+/* ─── Buttons ────────────────────────────────────── */
+
+.btn-primary {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.5rem;
+  cursor: pointer;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--ink-soft);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-ghost {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ink);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ─── Card ───────────────────────────────────────── */
+
+.card {
+  background: rgba(246, 240, 232, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(20, 18, 16, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* ─── Label ──────────────────────────────────────── */
+
+.label-tag {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--sage);
+}
+
+/* ─── Thinking bubble ────────────────────────────── */
+
+.thinking-bubble {
+  animation: fade-rise 0.3s ease-out both;
+}
+
+.thinking-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  color: var(--sage);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.thinking-header:hover {
+  color: var(--ink-soft);
+}
+
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.thinking-dots span {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: thinking-dot 1.4s ease-in-out infinite;
+}
+
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.thinking-done-icon {
+  display: inline-block;
+  font-size: 0.65rem;
+  opacity: 0.65;
+}
+
+.thinking-chevron {
+  display: inline-block;
+  font-size: 1rem;
+  line-height: 1;
+  transform-origin: center;
+  transition: transform 0.2s ease;
+  margin-top: -1px;
+}
+
+/* ─── Markdown content ───────────────────────────── */
+
+.md-p {
+  margin: 0 0 6px;
+  font-family: var(--font-body);
+}
+
+.md-p:last-child {
+  margin-bottom: 0;
+}
+
+.md-ul,
+.md-ol {
+  margin: 4px 0 8px;
+  padding-left: 1.4em;
+  font-family: var(--font-body);
+}
+
+.md-ul li,
+.md-ol li {
+  margin-bottom: 3px;
+  line-height: 1.65;
+}
+
+.md-code {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 0.88em;
+  background: rgba(20, 18, 16, 0.07);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ─── Thinking bubble ────────────────────────────── */
+
+.thinking-body {
+  margin-top: 6px;
+  padding: 10px 14px;
+  border-radius: 0 12px 12px 12px;
+  border: 1px solid rgba(92, 107, 86, 0.2);
+  background: rgba(92, 107, 86, 0.05);
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(20, 18, 16, 0.1) transparent;
+  animation: fade-rise 0.2s ease-out both;
+}

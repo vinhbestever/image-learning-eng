@@ -1,5 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createSession, submitAnswer } from './api'
+import { createSession, streamSubmitAnswer } from './api'
+
+function sseResponse(lines: string[]) {
+  const encoder = new TextEncoder()
+  const body = lines.join('')
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(body))
+        controller.close()
+      },
+    }),
+    { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+  )
+}
 
 describe('createSession', () => {
   beforeEach(() => {
@@ -38,29 +52,63 @@ describe('createSession', () => {
     const file = new File(['fake'], 'test.jpg', { type: 'image/jpeg' })
     await expect(createSession(file)).rejects.toThrow('Image too large')
   })
-})
 
-describe('submitAnswer', () => {
-  it('POSTs to /sessions/{id}/answer with answer body', async () => {
-    const mockResponse = {
-      session_id: 'abc-123',
-      step: 2,
-      total: 5,
-      question: 'Next question?',
-      done: false,
-    }
+  it('formats FastAPI validation detail arrays', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockResponse,
+      ok: false,
+      json: async () => ({
+        detail: [{ type: 'missing', loc: ['body', 'answer'], msg: 'Field required' }],
+      }),
     }))
 
-    const result = await submitAnswer('abc-123', 'I see a dog.')
+    const file = new File(['fake'], 'test.jpg', { type: 'image/jpeg' })
+    await expect(createSession(file)).rejects.toThrow('Field required')
+  })
+})
 
-    expect(fetch).toHaveBeenCalledWith('/sessions/abc-123/answer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answer: 'I see a dog.' }),
+describe('streamSubmitAnswer', () => {
+  it('POSTs stream URL and invokes onQuestion after deltas', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      sseResponse([
+        'data: {"type":"delta","text":"Hi "}\n\n',
+        'data: {"type":"question","step":2,"total":5,"text":"Next?"}\n\n',
+      ]),
+    ))
+
+    const onDelta = vi.fn()
+    const onQuestion = vi.fn()
+    await streamSubmitAnswer('sid-1', 'answer', {
+      onDelta,
+      onQuestion,
+      onDone: vi.fn(),
+      onError: vi.fn(),
     })
-    expect(result.step).toBe(2)
+
+    expect(fetch).toHaveBeenCalledWith('/sessions/sid-1/answer/stream', expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        Accept: 'text/event-stream',
+      }),
+      body: JSON.stringify({ answer: 'answer' }),
+    }))
+    expect(onDelta).toHaveBeenCalled()
+    expect(onQuestion).toHaveBeenCalledWith({ step: 2, total: 5, text: 'Next?' })
+  })
+
+  it('invokes onDone with evaluation', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      sseResponse([
+        'data: {"type":"done","step":5,"total":5,"evaluation":"All good."}\n\n',
+      ]),
+    ))
+
+    const onDone = vi.fn()
+    await streamSubmitAnswer('sid', 'x', {
+      onDelta: vi.fn(),
+      onQuestion: vi.fn(),
+      onDone,
+      onError: vi.fn(),
+    })
+    expect(onDone).toHaveBeenCalledWith({ step: 5, total: 5, evaluation: 'All good.' })
   })
 })

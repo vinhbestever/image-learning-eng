@@ -1,10 +1,30 @@
-interface Props { evaluation: string; onRetry: () => void }
+interface Props {
+  evaluation: string
+  onRetry: () => void
+}
 
 export default function FeedbackCard({ evaluation, onRetry }: Props) {
   return (
-    <div style={{ background: '#f9f9f9', borderRadius: 10, padding: 24, lineHeight: 1.7 }}>
-      <p style={{ whiteSpace: 'pre-wrap', marginBottom: 24 }}>{evaluation}</p>
-      <button onClick={onRetry} style={{ padding: '10px 24px', fontSize: 15, cursor: 'pointer' }}>
+    <div
+      style={{
+        background: 'linear-gradient(165deg, rgba(232, 223, 210, 0.5) 0%, rgba(246, 240, 232, 0.35) 100%)',
+        borderRadius: 16,
+        padding: 'clamp(20px, 4vw, 32px)',
+        lineHeight: 1.75,
+        border: '1px solid rgba(20, 18, 16, 0.08)',
+      }}
+    >
+      <p
+        style={{
+          whiteSpace: 'pre-wrap',
+          margin: '0 0 28px',
+          fontSize: '1.05rem',
+          color: 'var(--ink)',
+        }}
+      >
+        {evaluation}
+      </p>
+      <button type="button" className="btn-ghost" onClick={onRetry}>
         Try another image
       </button>
     </div>

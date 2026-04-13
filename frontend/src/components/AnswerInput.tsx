@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 
-interface Props { onSubmit: (answer: string) => void; disabled?: boolean }
+interface Props {
+  onSubmit: (answer: string) => void
+  disabled?: boolean
+}
 
 export default function AnswerInput({ onSubmit, disabled }: Props) {
   const [value, setValue] = useState('')
@@ -12,21 +15,47 @@ export default function AnswerInput({ onSubmit, disabled }: Props) {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, padding: '12px 0' }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: 10,
+        padding: '16px 0 8px',
+        borderTop: '1px solid rgba(20, 18, 16, 0.08)',
+      }}
+    >
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder="Type your answer..."
-        style={{ flex: 1, padding: '10px 12px', borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }}
+        placeholder="Your answer in English…"
+        aria-label="Your answer"
+        style={{
+          flex: 1,
+          padding: '14px 16px',
+          borderRadius: 12,
+          border: '1px solid rgba(20, 18, 16, 0.15)',
+          fontSize: '1rem',
+          fontFamily: 'var(--font-body)',
+          background: 'rgba(246, 240, 232, 0.6)',
+          color: 'var(--ink)',
+        }}
       />
-      <button onClick={handleSubmit} disabled={disabled || !value.trim()} style={{ padding: '10px 20px' }}>
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={handleSubmit}
+        disabled={disabled || !value.trim()}
+        style={{ padding: '14px 22px' }}
+      >
         Send
       </button>
     </div>
