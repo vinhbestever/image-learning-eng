@@ -19,6 +19,11 @@ describe('ChatScreen', () => {
     expect(screen.getByText('Question 1 / 5')).toBeInTheDocument()
   })
 
+  it('renders turn-based label when total is null', () => {
+    render(<ChatScreen {...defaultProps} total={null} />)
+    expect(screen.getByText('Turn 1')).toBeInTheDocument()
+  })
+
   it('renders all messages', () => {
     const messages: Message[] = [
       { role: 'agent', text: 'What do you see?' },

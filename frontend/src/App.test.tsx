@@ -20,7 +20,7 @@ function sseResponse(lines: string[]) {
 // SSE payload for a successful session creation (first question)
 const SESSION_SSE = [
   'data: {"type":"started","session_id":"abc"}\n\n',
-  'data: {"type":"question","session_id":"abc","step":1,"total":5,"text":"What do you see?"}\n\n',
+  'data: {"type":"question","session_id":"abc","step":1,"total":null,"text":"What do you see?"}\n\n',
 ]
 
 describe('App', () => {
@@ -41,7 +41,7 @@ describe('App', () => {
     await userEvent.upload(input, new File(['fake'], 'img.jpg', { type: 'image/jpeg' }))
     await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
 
-    expect(await screen.findByText('Question 1 / 5')).toBeInTheDocument()
+    expect(await screen.findByText('Turn 1')).toBeInTheDocument()
     expect(screen.getByText('What do you see?')).toBeInTheDocument()
   })
 
@@ -50,7 +50,7 @@ describe('App', () => {
       .mockResolvedValueOnce(sseResponse(SESSION_SSE))
       .mockResolvedValueOnce(
         sseResponse([
-          'data: {"type":"done","step":5,"total":5,"evaluation":"Great effort!"}\n\n',
+          'data: {"type":"done","step":5,"total":null,"evaluation":"Great effort!"}\n\n',
         ]),
       ),
     )
@@ -62,7 +62,7 @@ describe('App', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
 
-    await screen.findByText('Question 1 / 5')
+    await screen.findByText('Turn 1')
     await userEvent.type(screen.getByRole('textbox'), 'My answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
 
@@ -85,7 +85,7 @@ describe('App', () => {
       new File(['fake'], 'img.jpg', { type: 'image/jpeg' }),
     )
     await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
-    await screen.findByText('Question 1 / 5')
+    await screen.findByText('Turn 1')
     await userEvent.type(screen.getByRole('textbox'), 'answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
 
@@ -97,7 +97,7 @@ describe('App', () => {
       .mockResolvedValueOnce(sseResponse(SESSION_SSE))
       .mockResolvedValueOnce(
         sseResponse([
-          'data: {"type":"done","step":5,"total":5,"evaluation":"Done!"}\n\n',
+          'data: {"type":"done","step":5,"total":null,"evaluation":"Done!"}\n\n',
         ]),
       ),
     )
@@ -108,7 +108,7 @@ describe('App', () => {
       new File(['fake'], 'img.jpg', { type: 'image/jpeg' }),
     )
     await userEvent.click(screen.getByRole('button', { name: /Begin practice/i }))
-    await screen.findByText('Question 1 / 5')
+    await screen.findByText('Turn 1')
     await userEvent.type(screen.getByRole('textbox'), 'answer')
     await userEvent.click(screen.getByRole('button', { name: /Send/i }))
     await screen.findByText('Session complete')

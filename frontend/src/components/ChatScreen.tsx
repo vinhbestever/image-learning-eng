@@ -7,7 +7,7 @@ import type { Message } from '../types'
 interface Props {
   sessionId: string
   step: number
-  total: number
+  total: number | null
   imagePreview: string
   messages: Message[]
   onAnswerSubmitted: (answer: string) => void

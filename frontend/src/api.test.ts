@@ -24,7 +24,7 @@ describe('createSession', () => {
     const mockResponse = {
       session_id: 'abc-123',
       step: 1,
-      total: 5,
+      total: null,
       question: 'What do you see?',
       done: false,
     }
@@ -95,10 +95,27 @@ describe('streamSubmitAnswer', () => {
     expect(onQuestion).toHaveBeenCalledWith({ step: 2, total: 5, text: 'Next?' })
   })
 
+  it('invokes onQuestion when total is JSON null (adaptive sessions)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      sseResponse([
+        'data: {"type":"question","step":1,"total":null,"text":"Hi"}\n\n',
+      ]),
+    ))
+
+    const onQuestion = vi.fn()
+    await streamSubmitAnswer('sid', 'x', {
+      onDelta: vi.fn(),
+      onQuestion,
+      onDone: vi.fn(),
+      onError: vi.fn(),
+    })
+    expect(onQuestion).toHaveBeenCalledWith({ step: 1, total: null, text: 'Hi' })
+  })
+
   it('invokes onDone with evaluation', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       sseResponse([
-        'data: {"type":"done","step":5,"total":5,"evaluation":"All good."}\n\n',
+        'data: {"type":"done","step":5,"total":null,"evaluation":"All good."}\n\n',
       ]),
     ))
 
@@ -109,6 +126,6 @@ describe('streamSubmitAnswer', () => {
       onDone,
       onError: vi.fn(),
     })
-    expect(onDone).toHaveBeenCalledWith({ step: 5, total: 5, evaluation: 'All good.' })
+    expect(onDone).toHaveBeenCalledWith({ step: 5, total: null, evaluation: 'All good.' })
   })
 })

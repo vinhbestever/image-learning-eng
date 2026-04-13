@@ -1,11 +1,24 @@
 interface Props {
   step: number
-  total: number
+  total: number | null
   done?: boolean
 }
 
 export default function ProgressIndicator({ step, total, done }: Props) {
-  const pct = done ? 100 : Math.min(100, (step / total) * 100)
+  const hasCap = total != null && total > 0
+  const pct = done
+    ? 100
+    : hasCap
+      ? Math.min(100, (step / total!) * 100)
+      : Math.min(100, step * 8)
+
+  const mainLabel = done
+    ? hasCap
+      ? `All ${total} questions`
+      : 'Practice finished'
+    : hasCap
+      ? `Question ${step} / ${total}`
+      : `Turn ${step}`
 
   return (
     <div style={{ flex: 1 }}>
@@ -13,7 +26,7 @@ export default function ProgressIndicator({ step, total, done }: Props) {
         {done ? 'Completed' : 'Session'}
       </p>
       <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem' }}>
-        {done ? `All ${total} questions` : `Question ${step} / ${total}`}
+        {mainLabel}
       </p>
       <div
         style={{

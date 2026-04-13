@@ -38,7 +38,7 @@ describe('UploadScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       sseResponse([
         'data: {"type":"started","session_id":"abc"}\n\n',
-        'data: {"type":"question","session_id":"abc","step":1,"total":5,"text":"What do you see?"}\n\n',
+        'data: {"type":"question","session_id":"abc","step":1,"total":null,"text":"What do you see?"}\n\n',
       ]),
     ))
 

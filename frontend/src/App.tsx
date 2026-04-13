@@ -7,7 +7,7 @@ import type { AppState, Message, SessionResponse } from './types'
 type Action =
   | { type: 'SESSION_CREATED'; session: SessionResponse; imagePreview: string; thinking: string; thinkingDuration: number }
   | { type: 'USER_ANSWER_SUBMITTED'; text: string }
-  | { type: 'ANSWER_STREAM_QUESTION'; step: number; total: number; question: string; thinking: string; thinkingDuration: number }
+  | { type: 'ANSWER_STREAM_QUESTION'; step: number; total: number | null; question: string; thinking: string; thinkingDuration: number }
   | { type: 'ANSWER_STREAM_DONE'; evaluation: string; thinking: string; thinkingDuration: number }
   | { type: 'RETRY' }
 

@@ -1,7 +1,7 @@
 export interface SessionResponse {
   session_id: string
   step: number
-  total: number
+  total: number | null
   question?: string
   evaluation?: string
   done: boolean
@@ -20,7 +20,7 @@ export type AppState =
       screen: 'chat'
       sessionId: string
       step: number
-      total: number
+      total: number | null
       messages: Message[]
       currentQuestion: string
       imagePreview: string

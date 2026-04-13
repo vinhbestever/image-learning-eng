@@ -82,8 +82,8 @@ export default function UploadScreen({ onSessionCreated }: Props) {
             <span style={{ color: 'var(--accent)' }}>in English</span>
           </h1>
           <p style={{ margin: 0, color: 'var(--ink-soft)', maxWidth: 420, lineHeight: 1.65 }}>
-            Upload a photograph. A patient tutor will ask five questions about it — then give you warm,
-            specific feedback on your English.
+            Upload a photograph. A patient tutor will guide you through vocabulary, grammar, and sentences — then
+            give you warm, specific feedback on your English.
           </p>
         </header>
 
