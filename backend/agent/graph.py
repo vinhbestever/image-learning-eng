@@ -5,16 +5,25 @@ from deepagents import create_deep_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from .prompts import SYSTEM_PROMPT, EVALUATOR_PROMPT
-from .skills import MAIN_SKILLS_PATH, EVALUATOR_SKILLS_PATH
+from .prompts import EVALUATOR_PROMPT, IMAGE_ANALYZER_PROMPT, SYSTEM_PROMPT
+from .skills import EVALUATOR_SKILLS_PATH, IMAGE_ANALYZER_SKILLS_PATH, MAIN_SKILLS_PATH
 from .storage import get_app_sqlite_path
 from .tools import ask_user
 
+image_analyzer_subagent = {
+    "name": "image_analyzer",
+    "description": "Analyzes an image description and writes structured context to /session/image_context.md. "
+    "Extracts key vocabulary (with Vietnamese translations), scene description, and grammar topics "
+    "appropriate for ESL students grade 9 and below.",
+    "system_prompt": IMAGE_ANALYZER_PROMPT,
+    "skills": [IMAGE_ANALYZER_SKILLS_PATH],
+}
+
 evaluator_subagent = {
     "name": "evaluator",
-    "description": "Evaluates a student's English answers and provides teacher-style feedback. "
-    "Reads Q&A logs from the virtual filesystem and generates warm, constructive feedback "
-    "covering grammar, vocabulary, fluency, and content accuracy.",
+    "description": "Evaluates a student's English answers from an adaptive conversation session. "
+    "Reads Q&A logs from the virtual filesystem and generates warm, child-friendly feedback "
+    "in Vietnamese covering vocabulary, grammar, and sentence construction, with a star rating.",
     "system_prompt": EVALUATOR_PROMPT,
     "skills": [EVALUATOR_SKILLS_PATH],
 }
@@ -63,13 +72,12 @@ def _select_checkpointer():
 
 
 def build_agent():
-    """Build a deep agent with harness capabilities for English learning image Q&A.
+    """Build a deep agent with adaptive 3-phase English conversation capabilities.
 
     Capabilities used:
-    - Planning: write_todos for tracking Q&A progress
-    - Virtual filesystem: write_file/read_file for questions and Q&A log
-    - Subagent: evaluator for context-isolated feedback generation
-    - Skills: image-question-generation (main), english-evaluation (evaluator)
+    - Virtual filesystem: write_file/read_file for image context, Q&A log, phase state
+    - Subagents: image_analyzer (context extraction), evaluator (feedback generation)
+    - Skills: adaptive-conversation (main), english-evaluation (evaluator), image-analysis (image_analyzer)
     - Summarization: automatic context compression for long sessions
     - Human-in-the-loop: ask_user tool with interrupt() for Q&A
     """
@@ -78,7 +86,7 @@ def build_agent():
         model="openai:gpt-4o",
         tools=[ask_user],
         system_prompt=SYSTEM_PROMPT,
-        subagents=[evaluator_subagent],
+        subagents=[image_analyzer_subagent, evaluator_subagent],
         skills=[MAIN_SKILLS_PATH],
         checkpointer=checkpointer,
     )

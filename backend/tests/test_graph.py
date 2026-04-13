@@ -22,3 +22,13 @@ def test_ask_user_tool_schema():
     schema = ask_user.args_schema.model_json_schema()
     assert "question" in schema["properties"]
     assert schema["properties"]["question"]["type"] == "string"
+
+
+def test_agent_builds_with_two_subagents(monkeypatch):
+    monkeypatch.setenv("USE_MEMORY_CHECKPOINTER", "1")
+    from agent.graph import build_agent, reset_agent
+
+    reset_agent()
+    agent = build_agent()
+    assert agent is not None
+    reset_agent()
