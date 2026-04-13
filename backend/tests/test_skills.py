@@ -36,9 +36,10 @@ def test_evaluator_skill_contains_feedback_rubric():
     files = load_all_skill_files()
     eval_key = f"{EVALUATOR_SKILLS_PATH}english-evaluation/SKILL.md"
     text = _get_skill_text(files, eval_key)
-    assert "Grammar Feedback" in text
-    assert "Vocabulary Feedback" in text
-    assert "Fluency Feedback" in text
+    assert "sao" in text
+    assert "Từ vựng" in text
+    assert "Ngữ pháp" in text
+    assert "Đặt câu" in text
 
 
 def test_image_analysis_skill_exists_and_has_content():

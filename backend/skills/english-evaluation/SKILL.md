@@ -1,82 +1,56 @@
 ---
 name: english-evaluation
-description: Use this skill when evaluating a student's English answers and generating teacher-style feedback. Provides a feedback rubric, common ESL error patterns to look for, and examples of warm, constructive feedback.
+description: Use this skill when evaluating a student's English answers from an adaptive conversation session. Provides a simplified child-friendly rubric with star rating for students grade 9 and below.
 ---
 
-# English Evaluation for ESL Learners
+# English Evaluation — Young Learners (Grade 9 and below)
 
 ## Overview
 
-This skill guides you in evaluating a student's English answers about an image and providing warm, specific, constructive feedback. The goal is to help the student improve while feeling encouraged.
+You are reviewing a student's English practice session. Write warm, simple feedback in Vietnamese with a star rating. Keep it short — these are young learners who need encouragement, not a detailed report.
 
-## Feedback Structure
+## How to Evaluate
 
-Organize your feedback in this order:
+Read `/session/qa_log.md`. Look at:
+- **Vocabulary**: Did the student use the target words correctly? Did they understand meanings?
+- **Grammar**: Did the student use the target grammar structures? Were sentences structurally correct?
+- **Sentence Construction**: Did the student write complete, meaningful sentences? (If the session ended before Phase 3, note overall progress instead.)
 
-### 1. Opening (1-2 sentences)
-Start with genuine encouragement about what the student did well overall.
+## Output Format
 
-**Example:** "Great work! I can tell you looked at the image really carefully, and your descriptions were vivid and detailed."
+Write your feedback using exactly this format (in Vietnamese):
 
-### 2. Grammar Feedback
-Identify 2-3 specific grammar issues (not every single error). For each one:
-- Quote the student's original sentence
-- Explain what the error is
-- Provide the corrected version
-- Give a brief explanation of the rule
+```
+⭐⭐⭐⭐ (4/5 sao)
 
-**Example:**
-> You wrote: *"The people is walking in the park."*
-> The subject "people" is plural, so we need a plural verb: **"The people are walking in the park."**
+📝 **Từ vựng**
+[1-2 câu nhận xét thân thiện. Khen điểm tốt, nêu 1 gợi ý nếu cần.]
 
-**Common ESL errors to look for:**
-- Subject-verb agreement ("she have" → "she has")
-- Article usage ("I see cat" → "I see a cat")
-- Verb tense consistency (mixing past and present)
-- Preposition errors ("arrive to" → "arrive at")
-- Countable/uncountable confusion ("many informations" → "much information")
-- Word order in questions and relative clauses
-- Missing auxiliary verbs ("She not like" → "She does not like")
+📖 **Ngữ pháp**
+[1-2 câu nhận xét thân thiện. Khen điểm tốt, nêu 1 gợi ý nếu cần.]
 
-### 3. Vocabulary Feedback
-Comment on the student's word choices:
-- Praise specific good word choices
-- Suggest richer alternatives where appropriate
-- Introduce 1-2 new words the student could have used
+✍️ **Đặt câu**
+[1-2 câu nhận xét thân thiện. Nếu học sinh chưa đến giai đoạn này, nhận xét về tiến bộ tổng thể.]
 
-**Example:** "You used 'happy' to describe the mood — that works! An even more precise word might be **'cheerful'** or **'lighthearted'**, which capture the casual, relaxed feeling of the scene."
+💪 [1 câu động viên ngắn + 1 gợi ý luyện tập cụ thể]
+```
 
-### 4. Fluency Feedback
-Comment on how natural the sentences sound:
-- Praise sentences that flow well
-- Suggest rephrasing for awkward constructions
-- Point out where the student successfully used complex structures
+## Star Rating Guide
 
-**Example:** "Your sentence 'I think they are enjoying because the weather is nice' is close! A more natural way to say this is: **'I think they're enjoying themselves because the weather is nice.'** Notice how we add 'themselves' after 'enjoying' when there's no direct object."
+Rate the student's overall performance across all phases:
 
-### 5. Content Accuracy
-Briefly note how well the student's answers matched the image:
-- Praise accurate observations
-- Gently correct any misinterpretations
+| Rating | When to use |
+|--------|-------------|
+| ⭐ (1/5 sao) | Chưa hiểu nhiều, hầu hết câu trả lời chưa đúng |
+| ⭐⭐ (2/5 sao) | Đã cố gắng nhưng còn nhiều lỗi cơ bản |
+| ⭐⭐⭐ (3/5 sao) | Hiểu được, đôi khi mắc lỗi nhỏ |
+| ⭐⭐⭐⭐ (4/5 sao) | Làm tốt, rất ít lỗi, câu rõ ràng |
+| ⭐⭐⭐⭐⭐ (5/5 sao) | Xuất sắc, gần như không có lỗi |
 
-### 6. Closing (1-2 sentences)
-End with encouragement and a specific suggestion for what to practice next.
+## Tone Rules
 
-**Example:** "Overall, your English is strong and your ideas are clear! To keep improving, try practicing descriptions using more adjectives — words that describe size, shape, color, and feeling."
-
-## Tone Guidelines
-
-- **Warm:** Use "you", speak directly, be personable
-- **Specific:** Always quote the student's actual words — never give vague feedback
-- **Balanced:** Every correction should be paired with something positive
-- **Constructive:** Focus on 2-3 key improvements, not exhaustive error lists
-- **No scores:** Never assign numbers, grades, or percentages
-
-## What NOT to Do
-
-- Don't just say "Good job!" without specifics
-- Don't list every single error (overwhelming)
-- Don't use linguistic jargon the student wouldn't know
-- Don't be condescending ("This is a basic mistake")
-- Don't compare to native speakers ("A native speaker would say...")
-- Don't give a numeric score or letter grade
+- Write as if talking directly to the student: "Em đã dùng từ 'lush' rất đúng chỗ!"
+- Never say "Bạn mắc lỗi cơ bản" or anything that sounds harsh
+- Always end with something positive and a concrete next step
+- Keep each section to 1-2 sentences — this is feedback, not a lecture
+- No jargon: avoid terms like "subject-verb agreement"; say "động từ cần hợp với chủ ngữ" or give a specific example instead
