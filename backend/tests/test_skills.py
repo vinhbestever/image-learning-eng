@@ -39,3 +39,26 @@ def test_evaluator_skill_contains_feedback_rubric():
     assert "Grammar Feedback" in text
     assert "Vocabulary Feedback" in text
     assert "Fluency Feedback" in text
+
+
+def test_image_analysis_skill_exists_and_has_content():
+    from agent.skills import IMAGE_ANALYZER_SKILLS_PATH
+
+    files = load_all_skill_files()
+    key = f"{IMAGE_ANALYZER_SKILLS_PATH}image-analysis/SKILL.md"
+    assert key in files
+    text = _get_skill_text(files, key)
+    assert "image_context.md" in text
+    assert "Key Vocabulary" in text
+    assert "Suggested Grammar" in text
+
+
+def test_adaptive_conversation_skill_exists_and_has_phase_guidance():
+    files = load_all_skill_files()
+    key = f"{MAIN_SKILLS_PATH}adaptive-conversation/SKILL.md"
+    assert key in files
+    text = _get_skill_text(files, key)
+    assert "Vocabulary" in text
+    assert "Grammar" in text
+    assert "Sentence Construction" in text
+    assert "phase_state.md" in text
