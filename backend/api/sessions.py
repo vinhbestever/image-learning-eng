@@ -179,7 +179,7 @@ async def create_session_stream(image: UploadFile = File(...)):
                                 },
                                 {
                                     "type": "text",
-                                    "text": "Please look at this image and start asking me English practice questions about it.",
+                                    "text": "Please look at this image and begin our adaptive English lesson (vocabulary, grammar, and sentence practice) as described in your instructions.",
                                 },
                             ],
                         }
@@ -255,7 +255,7 @@ async def create_session(image: UploadFile = File(...)):
                         "type": "image_url",
                         "image_url": {"url": f"data:image/{image.content_type.split('/')[-1]};base64,{image_b64}"},
                     },
-                    {"type": "text", "text": "Please look at this image and start asking me English practice questions about it."},
+                    {"type": "text", "text": "Please look at this image and begin our adaptive English lesson (vocabulary, grammar, and sentence practice) as described in your instructions."},
                 ]},
             ],
             "files": skill_files,
