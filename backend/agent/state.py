@@ -1,11 +1,10 @@
-from typing import Annotated
-from typing_extensions import TypedDict
-import operator
+from dataclasses import dataclass, field
 
 
-class SessionState(TypedDict):
-    image_b64: str
-    questions: list[str]
-    answers: Annotated[list[str], operator.add]
-    current_step: int
-    evaluation: str
+@dataclass
+class SessionInfo:
+    """Tracks session metadata for the API layer."""
+    thread_id: str
+    step: int = 0
+    total: int = 5
+    questions_asked: list[str] = field(default_factory=list)
