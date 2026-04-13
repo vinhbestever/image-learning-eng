@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class AnswerRequest(BaseModel):
@@ -9,7 +10,7 @@ class AnswerRequest(BaseModel):
 class SessionResponse(BaseModel):
     session_id: str
     step: int
-    total: int = 5
+    total: Optional[int] = None
     question: Optional[str] = None
     evaluation: Optional[str] = None
     done: bool

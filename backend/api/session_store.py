@@ -34,7 +34,7 @@ def _get_conn() -> sqlite3.Connection:
                     session_id TEXT PRIMARY KEY,
                     thread_id TEXT NOT NULL,
                     step INTEGER NOT NULL,
-                    total INTEGER NOT NULL,
+                    phase TEXT NOT NULL DEFAULT 'vocabulary',
                     questions_json TEXT NOT NULL
                 )
                 """
@@ -48,19 +48,19 @@ def save_session(session_id: str, info: SessionInfo) -> None:
     with _lock:
         conn.execute(
             """
-            INSERT INTO api_sessions (session_id, thread_id, step, total, questions_json)
+            INSERT INTO api_sessions (session_id, thread_id, step, phase, questions_json)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(session_id) DO UPDATE SET
                 thread_id = excluded.thread_id,
                 step = excluded.step,
-                total = excluded.total,
+                phase = excluded.phase,
                 questions_json = excluded.questions_json
             """,
             (
                 session_id,
                 info.thread_id,
                 info.step,
-                info.total,
+                info.phase,
                 json.dumps(info.questions_asked),
             ),
         )
@@ -71,14 +71,19 @@ def load_session(session_id: str) -> SessionInfo | None:
     conn = _get_conn()
     with _lock:
         row = conn.execute(
-            "SELECT thread_id, step, total, questions_json FROM api_sessions WHERE session_id = ?",
+            "SELECT thread_id, step, phase, questions_json FROM api_sessions WHERE session_id = ?",
             (session_id,),
         ).fetchone()
     if row is None:
         return None
-    thread_id, step, total, questions_json = row
+    thread_id, step, phase, questions_json = row
     questions = json.loads(questions_json)
-    return SessionInfo(thread_id=thread_id, step=step, total=total, questions_asked=list(questions))
+    return SessionInfo(
+        thread_id=thread_id,
+        step=step,
+        phase=phase,
+        questions_asked=list(questions),
+    )
 
 
 def delete_session(session_id: str) -> None:
