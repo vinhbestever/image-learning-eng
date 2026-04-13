@@ -50,7 +50,7 @@ def test_create_session(client):
     data = response.json()
     assert "session_id" in data
     assert data["step"] == 1
-    assert data["total"] == 5
+    assert data["total"] is None
     assert data["done"] is False
     assert data["question"] == "What do you see?"
 
@@ -120,7 +120,7 @@ def test_submit_all_answers_returns_evaluation(client):
     assert data["evaluation"] == "Well done! Your answers were descriptive."
     assert data["question"] is None
     assert data["step"] == 5
-    assert data["total"] == 5
+    assert data["total"] is None
 
 
 def test_session_not_found(client):

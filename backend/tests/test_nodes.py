@@ -6,7 +6,7 @@ def test_session_info_defaults():
     info = SessionInfo(thread_id="abc")
     assert info.thread_id == "abc"
     assert info.step == 0
-    assert info.total == 5
+    assert info.phase == "vocabulary"
     assert info.questions_asked == []
 
 

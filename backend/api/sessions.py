@@ -146,7 +146,7 @@ async def create_session_stream(image: UploadFile = File(...)):
     Events emitted:
       {"type":"started","session_id":"..."}                              — immediately
       {"type":"delta","text":"..."}                                      — reasoning tokens
-      {"type":"question","session_id":"...","step":1,"total":5,"text":"..."}
+      {"type":"question","session_id":"...","step":1,"total":null,"text":"..."}
       {"type":"error","message":"..."}
     """
     if image.content_type not in ("image/jpeg", "image/png", "image/webp"):
@@ -216,7 +216,7 @@ async def create_session_stream(image: UploadFile = File(...)):
                     "type": "question",
                     "session_id": session_id,
                     "step": 1,
-                    "total": 5,
+                    "total": None,
                     "text": q,
                 }
             )
@@ -275,7 +275,6 @@ async def create_session(image: UploadFile = File(...)):
     return SessionResponse(
         session_id=session_id,
         step=1,
-        total=5,
         question=question,
         done=False,
     )
@@ -303,7 +302,6 @@ async def submit_answer(session_id: str, body: AnswerRequest):
         return SessionResponse(
             session_id=session_id,
             step=info.step,
-            total=info.total,
             question=question,
             done=False,
         )
@@ -314,7 +312,6 @@ async def submit_answer(session_id: str, body: AnswerRequest):
         return SessionResponse(
             session_id=session_id,
             step=final_step,
-            total=info.total,
             evaluation=evaluation,
             done=True,
         )
@@ -366,7 +363,7 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
                     {
                         "type": "question",
                         "step": info.step,
-                        "total": info.total,
+                        "total": None,
                         "text": q,
                     }
                 )
@@ -379,7 +376,7 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
                     {
                         "type": "done",
                         "step": final_step,
-                        "total": info.total,
+                        "total": None,
                         "evaluation": evaluation,
                     }
                 )
