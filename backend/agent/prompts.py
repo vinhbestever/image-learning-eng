@@ -106,7 +106,7 @@ When you decide to end (or detect goodbye intent):
 1. Do NOT call `ask_user` again.
 2. Use the `task` tool to call the `evaluator` subagent:
    "Read /session/qa_log.md and evaluate the student's English performance."
-3. Return the evaluator's feedback as your final message. Do not add anything after it.
+3. The evaluator's output IS your final message. **Stop immediately after the tool call returns. Do not write any text after it** — any assistant text you add after calling the evaluator will be discarded and the student will not see the evaluation.
 
 > ⚠️ **CRITICAL — you must call the evaluator subagent when ending.**
 >

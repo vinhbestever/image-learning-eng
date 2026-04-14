@@ -77,10 +77,30 @@ def _extract_final_message_from_messages(messages: list) -> str:
     return ""
 
 
+def _extract_evaluation_from_messages(messages: list) -> str:
+    """Extract the evaluator subagent's output from the message list.
+
+    The evaluator's output arrives as a ToolMessage once the `task(agent="evaluator")`
+    call completes.  The main agent sometimes writes a short meta-comment afterwards
+    (e.g. "You have received the evaluation in Vietnamese with a ⭐ rating.").
+    We must return the real ToolMessage content, not the agent's wrapper.
+
+    Priority:
+    1. Last ToolMessage whose content looks like a proper Vietnamese evaluation (⭐)
+    2. Fallback: last plain AIMessage (existing behaviour, handles edge cases)
+    """
+    for msg in reversed(messages):
+        if getattr(msg, "type", None) == "tool":
+            text = _message_text_content(msg)
+            if text and _looks_like_final_evaluation(text):
+                return text
+    return _extract_final_message_from_messages(messages)
+
+
 def _extract_final_message(result) -> str:
     """Extract the agent's final text response (the evaluation feedback)."""
     messages = result.value.get("messages", [])
-    return _extract_final_message_from_messages(messages)
+    return _extract_evaluation_from_messages(messages)
 
 
 def _messages_from_snapshot_values(values) -> list:
@@ -264,7 +284,7 @@ async def _retry_for_proper_evaluation(agent, config: dict, bad_output: str = ""
         )
         snap = await agent.aget_state(config)
         msgs = _messages_from_snapshot_values(snap.values)
-        blob = _extract_final_message_from_messages(msgs)
+        blob = _extract_evaluation_from_messages(msgs)
         if _looks_like_final_evaluation(blob):
             return blob
     return blob
@@ -561,14 +581,14 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
             snap = await agent.aget_state(config)
             q, choices = _interrupt_payload(snap.interrupts)
             msgs = _messages_from_snapshot_values(snap.values)
-            eval_blob = _extract_final_message_from_messages(msgs)
+            eval_blob = _extract_evaluation_from_messages(msgs)
 
             if q is None and _should_retry_missing_ask_user(eval_blob):
                 q, choices, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
 
             # Agent decided to end but skipped the evaluator subagent → retry to get proper Vietnamese evaluation
             if q is None and not _looks_like_final_evaluation(eval_blob):
-                eval_blob = await _retry_for_proper_evaluation(agent, config)
+                eval_blob = await _retry_for_proper_evaluation(agent, config, bad_output=eval_blob)
 
             if q is not None:
                 info.step += 1
