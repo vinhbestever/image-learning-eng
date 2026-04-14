@@ -12,5 +12,6 @@ class SessionResponse(BaseModel):
     step: int
     total: Optional[int] = None
     question: Optional[str] = None
+    choices: Optional[list[str]] = None
     evaluation: Optional[str] = None
     done: bool

@@ -7,14 +7,15 @@ import type { AppState, Message, SessionResponse } from './types'
 type Action =
   | { type: 'SESSION_CREATED'; session: SessionResponse; imagePreview: string; thinking: string; thinkingDuration: number }
   | { type: 'USER_ANSWER_SUBMITTED'; text: string }
-  | { type: 'ANSWER_STREAM_QUESTION'; step: number; total: number | null; question: string; thinking: string; thinkingDuration: number }
+  | { type: 'ANSWER_STREAM_QUESTION'; step: number; total: number | null; question: string; choices?: string[]; thinking: string; thinkingDuration: number }
   | { type: 'ANSWER_STREAM_DONE'; evaluation: string; thinking: string; thinkingDuration: number }
   | { type: 'RETRY' }
 
-function makeAgentMessage(text: string, thinking: string, thinkingDuration: number): Message {
+function makeAgentMessage(text: string, choices: string[] | undefined, thinking: string, thinkingDuration: number): Message {
   return {
     role: 'agent',
     text,
+    choices: choices && choices.length > 0 ? choices : undefined,
     thinking: thinking || undefined,
     thinkingDuration: thinking ? thinkingDuration : undefined,
   }
@@ -28,8 +29,9 @@ function reducer(state: AppState, action: Action): AppState {
         sessionId: action.session.session_id,
         step: action.session.step,
         total: action.session.total ?? null,
-        messages: [makeAgentMessage(action.session.question!, action.thinking, action.thinkingDuration)],
+        messages: [makeAgentMessage(action.session.question!, action.session.choices, action.thinking, action.thinkingDuration)],
         currentQuestion: action.session.question!,
+        currentChoices: action.session.choices,
         imagePreview: action.imagePreview,
       }
     case 'USER_ANSWER_SUBMITTED': {
@@ -42,8 +44,9 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         step: action.step,
         total: action.total ?? null,
-        messages: [...state.messages, makeAgentMessage(action.question, action.thinking, action.thinkingDuration)],
+        messages: [...state.messages, makeAgentMessage(action.question, action.choices, action.thinking, action.thinkingDuration)],
         currentQuestion: action.question,
+        currentChoices: action.choices,
       }
     }
     case 'ANSWER_STREAM_DONE': {
@@ -112,14 +115,14 @@ export default function App() {
           thinkingAccRef.current += t
           setThinkingText(thinkingAccRef.current)
         },
-        onQuestion: ({ step, total, text }) => {
+        onQuestion: ({ step, total, text, choices }) => {
           const elapsed = Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000))
           const captured = thinkingAccRef.current
           thinkingAccRef.current = ''
           setThinkingText('')
           setIsThinking(false)
           setThinkingDuration(elapsed)
-          dispatch({ type: 'ANSWER_STREAM_QUESTION', step, total, question: text, thinking: captured, thinkingDuration: elapsed })
+          dispatch({ type: 'ANSWER_STREAM_QUESTION', step, total, question: text, choices, thinking: captured, thinkingDuration: elapsed })
         },
         onDone: ({ evaluation }) => {
           const elapsed = Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000))
@@ -159,6 +162,7 @@ export default function App() {
       total={state.total}
       imagePreview={state.imagePreview}
       messages={state.messages}
+      currentChoices={state.currentChoices}
       onAnswerSubmitted={handleAnswer}
       submitting={answerSubmitting}
       submitError={answerError}

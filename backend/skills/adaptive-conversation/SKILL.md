@@ -94,6 +94,20 @@ When you are **not** wrapping up:
 
 Do **not** put the `**Turn N** | Phase:...` log lines in `ask_user` — those belong only in `qa_log.md`.
 
+## Session end (CRITICAL)
+
+When wrapping up, your own assistant text is **never** shown to the student. **Only the evaluator subagent's output reaches them.**
+
+❌ **Never** write an English closing message — these are silently discarded:
+- `"You've done great! Keep practicing."`
+- `"The evaluation is complete and shows your strengths."`
+- `"Great session! Your answers were accurate."`
+
+✅ **Always** end by calling the evaluator tool and writing nothing else:
+```
+task(agent="evaluator", prompt="Read /session/qa_log.md and evaluate the student's English performance.")
+```
+
 ## Deciding Whether to Continue or End
 
 After updating session files, read both files and reason:

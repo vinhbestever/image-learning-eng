@@ -10,6 +10,7 @@ interface Props {
   total: number | null
   imagePreview: string
   messages: Message[]
+  currentChoices?: string[]
   onAnswerSubmitted: (answer: string) => void
   submitting?: boolean
   submitError?: string | null
@@ -25,6 +26,7 @@ export default function ChatScreen({
   total,
   imagePreview,
   messages,
+  currentChoices,
   onAnswerSubmitted,
   submitting,
   submitError,
@@ -105,7 +107,7 @@ export default function ChatScreen({
               Try another image
             </button>
           ) : (
-            <AnswerInput onSubmit={onAnswerSubmitted} disabled={submitting} />
+            <AnswerInput onSubmit={onAnswerSubmitted} disabled={submitting} choices={currentChoices} />
           )}
         </div>
       </div>

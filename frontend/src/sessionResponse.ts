@@ -8,6 +8,7 @@ export function normalizeSessionResponse(data: Record<string, unknown>): Session
     step: Number(data.step),
     total: totalRaw === undefined || totalRaw === null ? null : Number(totalRaw),
     question: data.question != null ? String(data.question) : undefined,
+    choices: Array.isArray(data.choices) ? (data.choices as string[]) : undefined,
     evaluation: data.evaluation != null ? String(data.evaluation) : undefined,
     done: Boolean(data.done),
   }

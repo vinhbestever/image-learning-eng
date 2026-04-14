@@ -37,7 +37,7 @@ export async function createSession(image: File): Promise<SessionResponse> {
 
 export type StreamHandlers = {
   onDelta: (text: string) => void
-  onQuestion: (payload: { step: number; total: number | null; text: string }) => void
+  onQuestion: (payload: { step: number; total: number | null; text: string; choices?: string[] }) => void
   onDone: (payload: { step: number; total: number | null; evaluation: string }) => void
   onError: (message: string) => void
 }
@@ -66,7 +66,8 @@ export async function streamSubmitAnswer(
     if (ev.type === 'delta' && ev.text) handlers.onDelta(ev.text as string)
     else if (ev.type === 'question' && ev.text != null && ev.step != null) {
       const total = ev.total === undefined || ev.total === null ? null : (ev.total as number)
-      handlers.onQuestion({ step: ev.step as number, total, text: ev.text as string })
+      const choices = Array.isArray(ev.choices) ? (ev.choices as string[]) : undefined
+      handlers.onQuestion({ step: ev.step as number, total, text: ev.text as string, choices })
     } else if (ev.type === 'done' && ev.evaluation != null && ev.step != null) {
       const total = ev.total === undefined || ev.total === null ? null : (ev.total as number)
       handlers.onDone({ step: ev.step as number, total, evaluation: ev.evaluation as string })
@@ -76,7 +77,7 @@ export async function streamSubmitAnswer(
 
 export type CreateSessionStreamHandlers = {
   onDelta: (text: string) => void
-  onQuestion: (payload: { sessionId: string; step: number; total: number | null; text: string }) => void
+  onQuestion: (payload: { sessionId: string; step: number; total: number | null; text: string; choices?: string[] }) => void
   onError: (message: string) => void
 }
 
@@ -99,11 +100,13 @@ export async function streamCreateSession(
     if (ev.type === 'delta' && ev.text) handlers.onDelta(ev.text as string)
     else if (ev.type === 'question' && ev.session_id && ev.text != null && ev.step != null) {
       const total = ev.total === undefined || ev.total === null ? null : (ev.total as number)
+      const choices = Array.isArray(ev.choices) ? (ev.choices as string[]) : undefined
       handlers.onQuestion({
         sessionId: ev.session_id as string,
         step: ev.step as number,
         total,
         text: ev.text as string,
+        choices,
       })
     } else if (ev.type === 'error' && ev.message) handlers.onError(ev.message as string)
     // 'started' event is informational only; session_id comes with 'question'

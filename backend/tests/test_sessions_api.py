@@ -96,7 +96,7 @@ def test_submit_all_answers_returns_evaluation(client):
                 _mock_invoke_interrupt("Q3?"),
                 _mock_invoke_interrupt("Q4?"),
                 _mock_invoke_interrupt("Q5?"),
-                _mock_invoke_done("Well done! Your answers were descriptive."),
+                _mock_invoke_done("⭐⭐⭐\n\n📝 Từ vựng\nEm dùng từ vựng tốt."),
             ],
         )
 
@@ -117,7 +117,7 @@ def test_submit_all_answers_returns_evaluation(client):
     assert last_resp.status_code == 200
     data = last_resp.json()
     assert data["done"] is True
-    assert data["evaluation"] == "Well done! Your answers were descriptive."
+    assert "⭐⭐⭐" in data["evaluation"]
     assert data["question"] is None
     assert data["step"] == 5
     assert data["total"] is None
@@ -176,7 +176,7 @@ def test_done_response_reports_current_step_not_hardcoded_five(client):
             mock_agent,
             side_effect=[
                 _mock_invoke_interrupt("Only one question?"),
-                _mock_invoke_done("Short session."),
+                _mock_invoke_done("⭐⭐\n\n📝 Từ vựng\nEm cần cải thiện thêm."),
             ],
         )
         create_resp = client.post(
@@ -192,7 +192,7 @@ def test_done_response_reports_current_step_not_hardcoded_five(client):
     body = last.json()
     assert body["done"] is True
     assert body["step"] == 1
-    assert body["evaluation"] == "Short session."
+    assert "⭐⭐" in body["evaluation"]
 
 
 def test_extract_final_message_skips_tool_calls_and_parses_blocks():

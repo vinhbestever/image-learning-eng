@@ -19,18 +19,29 @@ def _sse_payload(obj: dict) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
 
-def _question_from_interrupts(interrupts) -> str | None:
+def _interrupt_payload(interrupts) -> tuple[str | None, list[str]]:
+    """Return (question, choices) from the first interrupt, or (None, []) if absent."""
     if not interrupts:
-        return None
-    interrupt_value = interrupts[0].value
-    if isinstance(interrupt_value, dict) and "question" in interrupt_value:
-        return interrupt_value["question"]
-    return str(interrupt_value)
+        return None, []
+    val = interrupts[0].value
+    if isinstance(val, dict) and "question" in val:
+        return str(val["question"]), val.get("choices") or []
+    return str(val), []
+
+
+def _question_from_interrupts(interrupts) -> str | None:
+    """Thin wrapper kept for backward compat with internal callers."""
+    return _interrupt_payload(interrupts)[0]
 
 
 def _extract_interrupt_question(result) -> str | None:
     """Extract the question from an interrupt triggered by the ask_user tool."""
     return _question_from_interrupts(result.interrupts)
+
+
+def _extract_interrupt_payload(result) -> tuple[str | None, list[str]]:
+    """Extract (question, choices) from an interrupt result."""
+    return _interrupt_payload(result.interrupts)
 
 
 def _message_text_content(msg) -> str:
@@ -83,20 +94,47 @@ def _messages_from_snapshot_values(values) -> list:
 MAX_ASK_USER_FORMAT_RETRIES = 2
 
 ASK_USER_RETRY_PROMPT = """[Format fix — required now]
-The app did not receive your next student prompt because the `ask_user` tool was not invoked (or the turn finished without a valid interrupt).
+The app did not receive your next student prompt because the `ask_user` tool was not invoked.
 
-You are still in the middle of the lesson unless you had already fully decided to end and call the evaluator before this message.
+The session will end incorrectly if you do not call `ask_user` immediately.
 
-Immediately call the `ask_user` tool exactly once. Its `question` argument must be ONE string containing:
-(1) optional brief feedback (English + Vietnamese if you correct an error),
-(2) exactly ONE next English question for the student.
+You are still in the middle of the lesson. Call `ask_user` exactly once now. Its `question` argument must be ONE string in this format:
+  1. Optional brief feedback in English (1-2 sentences)
+  2. Optional error explanation in Vietnamese (1 sentence)
+  3. Exactly ONE next English question
 
-Do not put the next question only in normal assistant text — the student will not see it and the session will break."""
+Example:
+  "Great job! The scene looks very lively.
+
+  Can you describe what the people in the background are doing?"
+
+Do NOT put text in a plain assistant message — the student will not see it and the session will break."""
 
 FIRST_QUESTION_RETRY_PROMPT = """[Format fix — required now]
 The app did not receive the first practice question because `ask_user` was not called.
 
 Call `ask_user` now with one string: a short warm welcome if you like, then exactly ONE English vocabulary question about the image."""
+
+MAX_EVALUATOR_FORMAT_RETRIES = 2
+
+
+def _make_evaluator_retry_prompt(bad_output: str) -> str:
+    """Build a dynamic retry prompt that quotes the agent's wrong output."""
+    preview = bad_output.strip()[:300] if bad_output.strip() else "(empty)"
+    return f"""[SYSTEM: Wrong output — tool call required immediately]
+
+Your last output was:
+"{preview}"
+
+This is an English summary. It is WRONG and has been discarded. The student has NOT received any feedback.
+
+The app requires the evaluator subagent to produce Vietnamese feedback with a ⭐ star rating.
+
+Call the `task` tool RIGHT NOW:
+  agent = "evaluator"
+  prompt = "Read /session/qa_log.md and evaluate the student's English performance."
+
+Do NOT write any text response. Do NOT summarize. ONLY execute the tool call."""
 
 
 def _looks_like_final_evaluation(text: str) -> bool:
@@ -166,6 +204,11 @@ def _looks_like_english_tutor_followup(text: str) -> bool:
         "sentence" in low or "running" in low or "corrected" in low or '"' in text
     ):
         return True
+    # Broad catch-all: English text with a question mark is almost certainly a skipped
+    # ask_user. The evaluator is mandated to write in Vietnamese (starts with ⭐),
+    # so English + "?" cannot be a valid evaluation — it must be mid-lesson content.
+    if "?" in text and not _has_substantial_vietnamese(text) and len(text.strip()) > 20:
+        return True
     return False
 
 
@@ -184,8 +227,8 @@ def _should_retry_missing_ask_user(assistant_blob: str) -> bool:
     return False
 
 
-async def _retry_until_ask_user_or_give_up(agent, config: dict, retry_prompt: str) -> tuple[str | None, str]:
-    """Run up to MAX_ASK_USER_FORMAT_RETRIES corrective invokes; return (question, final_blob)."""
+async def _retry_until_ask_user_or_give_up(agent, config: dict, retry_prompt: str) -> tuple[str | None, list[str], str]:
+    """Run up to MAX_ASK_USER_FORMAT_RETRIES corrective invokes; return (question, choices, final_blob)."""
     last_blob = ""
     for _ in range(MAX_ASK_USER_FORMAT_RETRIES):
         await agent.ainvoke(
@@ -194,14 +237,37 @@ async def _retry_until_ask_user_or_give_up(agent, config: dict, retry_prompt: st
             version="v2",
         )
         snap = await agent.aget_state(config)
-        q = _question_from_interrupts(snap.interrupts)
+        q, choices = _interrupt_payload(snap.interrupts)
         if q:
-            return q, ""
+            return q, choices, ""
         msgs = _messages_from_snapshot_values(snap.values)
         last_blob = _extract_final_message_from_messages(msgs)
         if not _should_retry_missing_ask_user(last_blob):
             break
-    return None, last_blob
+    return None, [], last_blob
+
+
+async def _retry_for_proper_evaluation(agent, config: dict, bad_output: str = "") -> str:
+    """Retry until the agent calls the evaluator subagent and returns Vietnamese feedback.
+
+    Loops up to MAX_EVALUATOR_FORMAT_RETRIES times, passing back the agent's wrong
+    output on each attempt so it can self-correct.  Returns the best blob found
+    (may still be English if the model keeps refusing to call the tool).
+    """
+    blob = bad_output
+    for _ in range(MAX_EVALUATOR_FORMAT_RETRIES):
+        retry_prompt = _make_evaluator_retry_prompt(blob)
+        await agent.ainvoke(
+            {"messages": [{"role": "user", "content": retry_prompt}]},
+            config=config,
+            version="v2",
+        )
+        snap = await agent.aget_state(config)
+        msgs = _messages_from_snapshot_values(snap.values)
+        blob = _extract_final_message_from_messages(msgs)
+        if _looks_like_final_evaluation(blob):
+            return blob
+    return blob
 
 
 def _iter_text_deltas_from_chunk(chunk) -> list[str]:
@@ -328,7 +394,7 @@ async def create_session_stream(image: UploadFile = File(...)):
                         yield _sse_payload({"type": "delta", "text": hint})
 
             snap = await agent.aget_state(config)
-            q = _question_from_interrupts(snap.interrupts)
+            q, choices = _interrupt_payload(snap.interrupts)
             if not q:
                 yield _sse_payload({"type": "error", "message": "Agent did not generate a question."})
                 return
@@ -344,6 +410,7 @@ async def create_session_stream(image: UploadFile = File(...)):
                     "step": 1,
                     "total": None,
                     "text": q,
+                    "choices": choices,
                 }
             )
         except Exception as e:
@@ -391,9 +458,9 @@ async def create_session(image: UploadFile = File(...)):
         version="v2",
     )
 
-    question = _extract_interrupt_question(result)
+    question, choices = _extract_interrupt_payload(result)
     if not question:
-        question, _ = await _retry_until_ask_user_or_give_up(agent, config, FIRST_QUESTION_RETRY_PROMPT)
+        question, choices, _ = await _retry_until_ask_user_or_give_up(agent, config, FIRST_QUESTION_RETRY_PROMPT)
     if not question:
         raise HTTPException(status_code=500, detail="Agent did not generate a question.")
 
@@ -405,6 +472,7 @@ async def create_session(image: UploadFile = File(...)):
         session_id=session_id,
         step=1,
         question=question,
+        choices=choices or None,
         done=False,
     )
 
@@ -423,10 +491,14 @@ async def submit_answer(session_id: str, body: AnswerRequest):
         version="v2",
     )
 
-    question = _extract_interrupt_question(result)
+    question, choices = _extract_interrupt_payload(result)
     eval_blob = _extract_final_message(result)
     if not question and _should_retry_missing_ask_user(eval_blob):
-        question, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
+        question, choices, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
+
+    # Agent decided to end but skipped the evaluator subagent → retry to get proper Vietnamese evaluation
+    if not question and not _looks_like_final_evaluation(eval_blob):
+        eval_blob = await _retry_for_proper_evaluation(agent, config, bad_output=eval_blob)
 
     if question:
         info.step += 1
@@ -436,6 +508,7 @@ async def submit_answer(session_id: str, body: AnswerRequest):
             session_id=session_id,
             step=info.step,
             question=question,
+            choices=choices or None,
             done=False,
         )
     else:
@@ -486,12 +559,16 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
                         yield _sse_payload({"type": "delta", "text": hint})
 
             snap = await agent.aget_state(config)
-            q = _question_from_interrupts(snap.interrupts)
+            q, choices = _interrupt_payload(snap.interrupts)
             msgs = _messages_from_snapshot_values(snap.values)
             eval_blob = _extract_final_message_from_messages(msgs)
 
             if q is None and _should_retry_missing_ask_user(eval_blob):
-                q, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
+                q, choices, eval_blob = await _retry_until_ask_user_or_give_up(agent, config, ASK_USER_RETRY_PROMPT)
+
+            # Agent decided to end but skipped the evaluator subagent → retry to get proper Vietnamese evaluation
+            if q is None and not _looks_like_final_evaluation(eval_blob):
+                eval_blob = await _retry_for_proper_evaluation(agent, config)
 
             if q is not None:
                 info.step += 1
@@ -503,6 +580,7 @@ async def submit_answer_stream(session_id: str, body: AnswerRequest):
                         "step": info.step,
                         "total": None,
                         "text": q,
+                        "choices": choices,
                     }
                 )
             else:

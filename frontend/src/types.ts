@@ -3,6 +3,7 @@ export interface SessionResponse {
   step: number
   total: number | null
   question?: string
+  choices?: string[]
   evaluation?: string
   done: boolean
 }
@@ -10,6 +11,7 @@ export interface SessionResponse {
 export interface Message {
   role: 'agent' | 'user' | 'evaluation'
   text: string
+  choices?: string[]
   thinking?: string
   thinkingDuration?: number
 }
@@ -23,6 +25,7 @@ export type AppState =
       total: number | null
       messages: Message[]
       currentQuestion: string
+      currentChoices?: string[]
       imagePreview: string
       done?: boolean
     }

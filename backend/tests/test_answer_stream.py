@@ -25,7 +25,11 @@ class FakeStreamAgent:
                 interrupts=(),
                 values={
                     "messages": [
-                        SimpleNamespace(type="ai", content="Final feedback text.", tool_calls=[]),
+                        SimpleNamespace(
+                            type="ai",
+                            content="⭐⭐⭐\n\n📝 Từ vựng\nEm dùng từ vựng tốt.",
+                            tool_calls=[],
+                        ),
                     ],
                 },
             )
@@ -81,4 +85,4 @@ def test_answer_stream_emits_done_event(client):
             body = resp.read().decode()
 
     assert '"type": "done"' in body
-    assert "Final feedback text." in body
+    assert "⭐⭐⭐" in body
